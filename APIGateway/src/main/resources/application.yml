@@ -17,7 +17,7 @@ spring:
             redirect-uri: "{baseUrl}/login/oauth2/code/authentik"
         provider:
           authentik:
-            back-channel-logout-url: ${AUTHENTIK_BACK_CHANNEL_LOGOUT_URL}
+            back-channel-logout-url: ${AUTHENTIK_BACK_CHANNEL_LOGOUT_URL} # spring doesn't support back-channel logouts by default
             issuer-uri: ${AUTHENTIK_ISSUER_URL}
   cloud:
     gateway:
@@ -26,7 +26,7 @@ spring:
       routes:
         - id: api
           uri: ${API_URI}
-          order: 0
+          order: 1
           predicates:
             - Path=/api/**
           filters:
@@ -36,3 +36,18 @@ spring:
           uri: ${FRONTEND_URI}
           predicates:
             - Path=/**
+server:
+  ssl:
+    enabled: true
+    key-store-type: PKCS12
+    key-store: classpath:keystore/local.p12
+    key-store-password: asdf1234
+    key-alias: local
+  reactive:
+    session:
+      cookie:
+        http-only: true
+        secure: true
+        same-site: lax
+        max-age: 30m
+        path: "/"

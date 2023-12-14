@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
@@ -19,16 +20,27 @@ import org.springframework.security.oauth2.client.web.server.ServerOAuth2Authori
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.authentication.HttpStatusServerEntryPoint;
+import org.springframework.security.web.server.authentication.RedirectServerAuthenticationSuccessHandler;
 import org.springframework.session.data.redis.config.annotation.web.server.EnableRedisWebSession;
 import org.springframework.web.server.WebSession;
+
+import java.time.Duration;
 
 @Configuration
 @EnableWebFluxSecurity
 @EnableRedisWebSession
 public class SecurityConfiguration implements BeanClassLoaderAware {
 
+    public static final String IS_LOGGED_IN_COOKIE = "isLoggedIn";
+
     @Value("${spring.security.oauth2.client.provider.authentik.back-channel-logout-url}")
     private String backChannelLogoutUrl;
+
+    @Value("${server.reactive.session.cookie.max-age}")
+    private Duration springSessionDuration;
+
+    @Value("${server.reactive.session.cookie.path}")
+    private String springSessionPath;
 
     private ClassLoader loader;
 
@@ -41,6 +53,23 @@ public class SecurityConfiguration implements BeanClassLoaderAware {
                     c.pathMatchers("/api/**").authenticated();
                 })
                 .oauth2Login(c -> {
+                    c.authenticationSuccessHandler((exchange, auth) -> {
+                        ServerHttpResponse response = exchange.getExchange().getResponse();
+
+                        response.getCookies().set(
+                                IS_LOGGED_IN_COOKIE,
+                                ResponseCookie.from(IS_LOGGED_IN_COOKIE)
+                                        .value("true")
+                                        .path(springSessionPath)
+                                        .maxAge(springSessionDuration)
+                                        .httpOnly(false)
+                                        .secure(false)
+                                        .build()
+                        );
+
+                        return new RedirectServerAuthenticationSuccessHandler("/").onAuthenticationSuccess(exchange, auth);
+                    });
+
                     c.authorizationRequestResolver(resolver);
                 })
                 .logout(c -> {
@@ -50,6 +79,17 @@ public class SecurityConfiguration implements BeanClassLoaderAware {
                         response.setStatusCode(HttpStatus.SEE_OTHER);
                         response.getHeaders().set("Location", backChannelLogoutUrl);
                         response.getCookies().remove("JSESSIONID");
+                        response.getCookies().remove("SESSION");
+                        response.getCookies().set(
+                                IS_LOGGED_IN_COOKIE,
+                                ResponseCookie.from(IS_LOGGED_IN_COOKIE)
+                                        .value("false")
+                                        .path(springSessionPath)
+                                        .maxAge(springSessionDuration)
+                                        .httpOnly(false)
+                                        .secure(false)
+                                        .build()
+                        );
 
                         return ex.getExchange().getSession().flatMap(WebSession::invalidate);
                     });

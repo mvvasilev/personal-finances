@@ -10,6 +10,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.JwtClaimNames;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Optional;
@@ -26,7 +27,7 @@ public class ApiController {
         this.objectMapper = objectMapper;
     }
 
-    @GetMapping("/api/user-info")
+    @PostMapping("/api/user-info")
     public ResponseEntity<Authentication> userInfo(JwtAuthenticationToken authenticationToken) {
         logger.info(authenticationToken.getToken().getClaimAsString(JwtClaimNames.SUB));
         return ResponseEntity.of(Optional.of(SecurityContextHolder.getContext().getAuthentication()));

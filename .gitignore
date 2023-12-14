@@ -43,3 +43,4 @@ bin/
 
 ### .env files ###
 .env
+*.p12
