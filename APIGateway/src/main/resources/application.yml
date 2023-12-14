@@ -1,0 +1,38 @@
+logging:
+  level:
+    web: trace
+    core: trace
+spring:
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+  security:
+    oauth2:
+      client:
+        registration:
+          authentik:
+            client-id: ${AUTHENTIK_CLIENT_ID}
+            client-secret: ${AUTHENTIK_CLIENT_SECRET}
+            redirect-uri: "{baseUrl}/login/oauth2/code/authentik"
+        provider:
+          authentik:
+            back-channel-logout-url: ${AUTHENTIK_BACK_CHANNEL_LOGOUT_URL}
+            issuer-uri: ${AUTHENTIK_ISSUER_URL}
+  cloud:
+    gateway:
+      set-status:
+        original-status-header-name: Original-Status
+      routes:
+        - id: api
+          uri: ${API_URI}
+          order: 0
+          predicates:
+            - Path=/api/**
+          filters:
+            - TokenRelay=
+        - id: spa
+          order: 10
+          uri: ${FRONTEND_URI}
+          predicates:
+            - Path=/**

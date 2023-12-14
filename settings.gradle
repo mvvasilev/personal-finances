@@ -1,0 +1,5 @@
+rootProject.name = 'personal-finances'
+
+include 'PersonalFinancesService'
+include 'APIGateway'
+
