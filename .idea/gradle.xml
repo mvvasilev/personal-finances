@@ -10,6 +10,7 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/APIGateway" />
+            <option value="$PROJECT_DIR$/Common" />
             <option value="$PROJECT_DIR$/PersonalFinancesService" />
           </set>
         </option>

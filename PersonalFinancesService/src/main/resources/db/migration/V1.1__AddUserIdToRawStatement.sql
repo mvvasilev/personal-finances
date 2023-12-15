@@ -1,0 +1,1 @@
+ALTER TABLE transactions.raw_statement ADD user_id INTEGER NOT NULL;
