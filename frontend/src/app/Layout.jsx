@@ -1,7 +1,7 @@
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import CssBaseline from '@mui/material/CssBaseline'
-import {ThemeProvider, createTheme} from '@mui/material';
+import {ThemeProvider, createTheme, Container, Backdrop} from '@mui/material';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
 import Divider from '@mui/material/Divider';
@@ -17,12 +17,13 @@ import {Login as LoginIcon} from "@mui/icons-material";
 import {Toaster} from 'react-hot-toast';
 import theme from '../components/ThemeRegistry/theme';
 import Button from "@mui/material/Button";
+import Grid from "@mui/material/Unstable_Grid2";
 
 const DRAWER_WIDTH = 240;
 
 const NAV_LINKS = [
     {text: 'Home', to: '/', icon: HomeIcon},
-    {text: 'Transactions', to: '/transactions', icon: TransactionsIcon},
+    {text: 'Statements', to: '/statements', icon: TransactionsIcon},
 ];
 
 const BOTTOM_LINKS = [
@@ -49,6 +50,7 @@ export default function RootLayout({children}) {
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline/>
+
             <Drawer
                 sx={{
                     width: DRAWER_WIDTH,
@@ -112,12 +114,14 @@ export default function RootLayout({children}) {
                     top: 0,
                     flexGrow: 1,
                     bgcolor: 'background.default',
-                    ml: `${DRAWER_WIDTH}px`,
+                    left: `${DRAWER_WIDTH}px`,
+                    right: 0,
                     p: 3,
                 }}
             >
                 {children}
             </Box>
+
             <Toaster
                 toastOptions={{
                     success: {
@@ -132,6 +136,6 @@ export default function RootLayout({children}) {
                     },
                 }}
             />
-        </ ThemeProvider>
+        </ThemeProvider>
     );
 }

@@ -1,5 +1,7 @@
 package dev.mvvasilev.finances.services;
 
+import dev.mvvasilev.finances.dtos.TransactionValueGroupDTO;
+import dev.mvvasilev.finances.dtos.UploadedStatementDTO;
 import dev.mvvasilev.finances.entity.RawStatement;
 import dev.mvvasilev.finances.entity.RawTransactionValue;
 import dev.mvvasilev.finances.entity.RawTransactionValueGroup;
@@ -8,23 +10,14 @@ import dev.mvvasilev.finances.persistence.RawStatementRepository;
 import dev.mvvasilev.finances.persistence.RawTransactionValueGroupRepository;
 import dev.mvvasilev.finances.persistence.RawTransactionValueRepository;
 import jakarta.transaction.Transactional;
-import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.poi.ss.usermodel.CellType;
-import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
-import org.apache.poi.ss.util.CellUtil;
-import org.hibernate.type.descriptor.DateTimeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -32,13 +25,14 @@ import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoField;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.IntStream;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
-public class TransactionsService {
+public class StatementsService {
 
     private static final DateTimeFormatter DATE_FORMAT = new DateTimeFormatterBuilder()
             .appendPattern("dd.MM.yyyy[ [HH][:mm][:ss]]")
@@ -55,14 +49,15 @@ public class TransactionsService {
     private RawTransactionValueRepository rawTransactionValueRepository;
 
     @Autowired
-    public TransactionsService(RawStatementRepository rawStatementRepository, RawTransactionValueGroupRepository rawTransactionValueGroupRepository, RawTransactionValueRepository rawTransactionValueRepository) {
+    public StatementsService(RawStatementRepository rawStatementRepository, RawTransactionValueGroupRepository rawTransactionValueGroupRepository, RawTransactionValueRepository rawTransactionValueRepository) {
         this.rawStatementRepository = rawStatementRepository;
         this.rawTransactionValueGroupRepository = rawTransactionValueGroupRepository;
         this.rawTransactionValueRepository = rawTransactionValueRepository;
     }
 
 
-    public void uploadMultipleTransactionsFromExcelSheetForUser(InputStream workbookInputStream, String userId) throws IOException {
+    public void uploadStatementFromExcelSheetForUser(String fileName, String mimeType, InputStream workbookInputStream, int userId) throws IOException {
+
         var workbook = WorkbookFactory.create(workbookInputStream);
 
         var firstWorksheet = workbook.getSheetAt(0);
@@ -70,7 +65,8 @@ public class TransactionsService {
         var lastRowIndex = firstWorksheet.getLastRowNum();
 
         var statement = new RawStatement();
-        statement.setUserId(Integer.parseInt(userId));
+        statement.setUserId(userId);
+        statement.setName(fileName);
 
         statement = rawStatementRepository.saveAndFlush(statement);
 
@@ -78,6 +74,7 @@ public class TransactionsService {
 
         List<RawTransactionValueGroup> valueGroups = new ArrayList<>();
 
+        // turn each column into a value group
         for (var c : firstRow) {
 
             if (c == null || c.getCellType() == CellType.BLANK) {
@@ -92,9 +89,11 @@ public class TransactionsService {
             // group type is string by default, if no other type could have been determined
             var groupType = RawTransactionValueType.STRING;
 
+            // iterate down through the rows on this column, looking for the first one to return a type
             for (int y = c.getRowIndex() + 1; y <= lastRowIndex; y++) {
                 var typeResult = determineGroupType(firstWorksheet, y, c.getColumnIndex());
 
+                // if a type has been determined, stop here
                 if (typeResult.isPresent()) {
                     groupType = typeResult.get();
                     break;
@@ -109,6 +108,8 @@ public class TransactionsService {
         valueGroups = rawTransactionValueGroupRepository.saveAllAndFlush(valueGroups);
 
         var column = 0;
+
+        // turn each cell in each row into a value, related to the value group ( column )
         for (var group : valueGroups) {
             var valueList = new ArrayList<RawTransactionValue>();
 
@@ -116,6 +117,7 @@ public class TransactionsService {
                 var value = new RawTransactionValue();
 
                 value.setGroupId(group.getId());
+                value.setRowIndex(y);
 
                 switch (group.getType()) {
                     case STRING -> value.setStringValue(firstWorksheet.getRow(y).getCell(column).getStringCellValue());
@@ -157,13 +159,31 @@ public class TransactionsService {
         return Optional.empty();
     }
 
-    private boolean isValidDate(String inDate) {
+    private boolean isValidDate(String stringDate) {
         try {
-            DATE_FORMAT.parse(inDate.trim());
+            DATE_FORMAT.parse(stringDate);
         } catch (DateTimeParseException e) {
             return false;
         }
         return true;
     }
 
+    public Collection<UploadedStatementDTO> fetchStatementsForUser(int userId) {
+        return rawStatementRepository.fetchAllForUser(userId)
+                .stream()
+                .map(dto -> new UploadedStatementDTO(dto.getId(), dto.getName(), dto.getTimeCreated()))
+                .collect(Collectors.toList());
+    }
+
+    public Collection<TransactionValueGroupDTO> fetchTransactionValueGroupsForUserStatement(Long statementId, int userId) {
+        return rawTransactionValueGroupRepository.fetchAllForStatementAndUser(statementId, userId)
+                .stream()
+                .map(dto -> new TransactionValueGroupDTO(dto.getId(), dto.getName(), RawTransactionValueType.values()[dto.getType()]))
+                .collect(Collectors.toList());
+    }
+
+    public void deleteStatement(Long statementId, int userId) {
+        rawStatementRepository.deleteById(statementId);
+        rawStatementRepository.flush();
+    }
 }

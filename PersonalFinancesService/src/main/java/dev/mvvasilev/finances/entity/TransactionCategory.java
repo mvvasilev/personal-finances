@@ -5,14 +5,14 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(schema = "transactions")
-public class RawStatement extends AbstractEntity {
+@Table(schema = "categories")
+public class TransactionCategory extends AbstractEntity {
 
     private Integer userId;
 
     private String name;
 
-    public RawStatement() {
+    public TransactionCategory() {
     }
 
     public Integer getUserId() {

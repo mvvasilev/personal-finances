@@ -1,0 +1,11 @@
+ALTER TABLE transactions.raw_transaction_value
+DROP CONSTRAINT fk_raw_transaction_value_raw_transaction_value_group;
+
+ALTER TABLE transactions.raw_transaction_value
+ADD CONSTRAINT FK_raw_transaction_value_raw_transaction_value_group FOREIGN KEY (group_id) REFERENCES transactions.raw_transaction_value_group(id) ON DELETE CASCADE;
+
+ALTER TABLE transactions.raw_transaction_value_group
+DROP CONSTRAINT fk_raw_transaction_value_group_raw_statement;
+
+ALTER TABLE transactions.raw_transaction_value_group
+ADD CONSTRAINT FK_raw_transaction_value_group_raw_statement FOREIGN KEY (statement_id) REFERENCES transactions.raw_statement(id) ON DELETE CASCADE;

@@ -1,7 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import HomePage from "@/app/pages/HomePage"
 import RootLayout from '@/app/Layout';
-import TransactionsPage from './app/pages/TransactionsPage';
+import StatementsPage from './app/pages/StatementsPage.jsx';
 
 function App() {
   return (
@@ -9,7 +9,7 @@ function App() {
       <RootLayout>
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/transactions" element={<TransactionsPage />} />
+          <Route path="/statements" element={<StatementsPage />} />
         </Routes>
       </RootLayout>
     </>

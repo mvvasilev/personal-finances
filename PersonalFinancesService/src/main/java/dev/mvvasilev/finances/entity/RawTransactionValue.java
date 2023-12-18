@@ -19,6 +19,8 @@ public class RawTransactionValue extends AbstractEntity {
 
     private Boolean booleanValue;
 
+    private int rowIndex;
+
     public RawTransactionValue() {
     }
 
@@ -60,5 +62,13 @@ public class RawTransactionValue extends AbstractEntity {
 
     public void setBooleanValue(Boolean booleanValue) {
         this.booleanValue = booleanValue;
+    }
+
+    public int getRowIndex() {
+        return rowIndex;
+    }
+
+    public void setRowIndex(int rowIndex) {
+        this.rowIndex = rowIndex;
     }
 }

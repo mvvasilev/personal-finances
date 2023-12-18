@@ -21,7 +21,7 @@ public class APIResponseAdvice {
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @ExceptionHandler(Exception.class)
-    public APIResponseDTO<Object> processGenericException(Exception ex) {
+    public ResponseEntity<APIResponseDTO<Object>> processGenericException(Exception ex) {
         List<APIErrorDTO> errors = List.of(
                 new APIErrorDTO(
                         ex.getMessage(),
@@ -32,11 +32,12 @@ public class APIResponseAdvice {
 
         logger.error("Exception", ex);
 
-        return new APIResponseDTO<>(
-                null,
-                errors,
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase()
-        );
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new APIResponseDTO<>(
+                        null,
+                        errors,
+                        HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                        HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase()
+                ));
     }
 }

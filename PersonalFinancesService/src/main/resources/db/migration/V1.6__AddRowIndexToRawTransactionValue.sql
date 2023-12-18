@@ -1,0 +1,1 @@
+ALTER TABLE transactions.raw_transaction_value ADD row_index INTEGER NOT NULL;
