@@ -1,6 +1,7 @@
 package dev.mvvasilev.finances.entity;
 
 import dev.mvvasilev.common.data.AbstractEntity;
+import dev.mvvasilev.common.data.UserOwned;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
@@ -8,7 +9,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(schema = "transactions")
-public class ProcessedTransaction extends AbstractEntity {
+public class ProcessedTransaction extends AbstractEntity implements UserOwned {
 
     private String description;
 
@@ -18,11 +19,9 @@ public class ProcessedTransaction extends AbstractEntity {
 
     private boolean isInflow;
 
-    private Long categoryId;
-
     private LocalDateTime timestamp;
 
-    // private Long transactionMappingId;
+    private Long statementId;
 
     public ProcessedTransaction() {
     }
@@ -51,14 +50,6 @@ public class ProcessedTransaction extends AbstractEntity {
         isInflow = inflow;
     }
 
-    public Long getCategoryId() {
-        return categoryId;
-    }
-
-    public void setCategoryId(Long categoryId) {
-        this.categoryId = categoryId;
-    }
-
     public LocalDateTime getTimestamp() {
         return timestamp;
     }
@@ -75,11 +66,11 @@ public class ProcessedTransaction extends AbstractEntity {
         this.userId = userId;
     }
 
-//    public Long getTransactionMappingId() {
-//        return transactionMappingId;
-//    }
-//
-//    public void setTransactionMappingId(Long transactionMappingId) {
-//        this.transactionMappingId = transactionMappingId;
-//    }
+    public Long getStatementId() {
+        return statementId;
+    }
+
+    public void setStatementId(Long statementId) {
+        this.statementId = statementId;
+    }
 }

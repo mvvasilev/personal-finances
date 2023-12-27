@@ -13,6 +13,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class DebugController extends AbstractRestController {
     @GetMapping("/token")
     public ResponseEntity<APIResponseDTO<String>> fetchToken(@RequestHeader("Authorization") String authHeader) {
-        return ResponseEntity.ofNullable(ok(authHeader));
+        return ok(authHeader);
     }
 }

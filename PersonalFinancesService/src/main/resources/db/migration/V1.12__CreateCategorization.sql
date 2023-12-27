@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS categories.categorization (
+    id BIGSERIAL,
+    time_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    time_last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    user_id INTEGER NOT NULL,
+    rule_based_on VARCHAR(255),
+    categorization_rule VARCHAR(255),
+    string_value VARCHAR(1024),
+    numeric_greater_than INTEGER,
+    numeric_less_than INTEGER,
+    numeric_value INTEGER,
+    timestamp_greater_than TIMESTAMP,
+    timestamp_less_than TIMESTAMP,
+    boolean_value BOOLEAN,
+    category_id BIGINT NULL,
+    left_categorization_id BIGINT,
+    right_categorization_id BIGINT,
+    CONSTRAINT PK_categorization PRIMARY KEY (id),
+    CONSTRAINT FK_categorization_category FOREIGN KEY (category_id) REFERENCES categories.category(id),
+    CONSTRAINT FK_categorization_categorization_left FOREIGN KEY (left_categorization_id) REFERENCES categories.categorization(left_categorization_id) ON DELETE CASCADE,
+    CONSTRAINT FK_categorization_categorization_right FOREIGN KEY (right_categorization_id) REFERENCES categories.categorization(right_categorization_id) ON DELETE CASCADE
+);

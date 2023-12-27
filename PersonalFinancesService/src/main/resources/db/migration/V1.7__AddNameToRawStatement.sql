@@ -1,1 +1,1 @@
-ALTER TABLE transactions.raw_statement ADD name VARCHAR(255);
+ALTER TABLE transactions.raw_statement ADD COLUMN IF NOT EXISTS name VARCHAR(255);

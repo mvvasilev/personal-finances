@@ -1,12 +1,13 @@
 package dev.mvvasilev.finances.entity;
 
 import dev.mvvasilev.common.data.AbstractEntity;
+import dev.mvvasilev.common.data.UserOwned;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
 @Entity
 @Table(schema = "categories")
-public class TransactionCategory extends AbstractEntity {
+public class TransactionCategory extends AbstractEntity implements UserOwned {
 
     private Integer userId;
 

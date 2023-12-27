@@ -1,1 +1,1 @@
-ALTER TABLE transactions.raw_transaction_value ADD boolean_value BOOLEAN;
+ALTER TABLE transactions.raw_transaction_value ADD COLUMN IF NOT EXISTS boolean_value BOOLEAN;

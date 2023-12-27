@@ -1,8 +1,16 @@
 package dev.mvvasilev.finances.enums;
 
-public enum RawTransactionValueType {
+import dev.mvvasilev.common.data.PersistableEnum;
+
+// TODO: Create custom converter for JPA
+public enum RawTransactionValueType implements PersistableEnum<String> {
     STRING,
     NUMERIC,
     TIMESTAMP,
-    BOOLEAN
+    BOOLEAN;
+
+    @Override
+    public String value() {
+        return name();
+    }
 }

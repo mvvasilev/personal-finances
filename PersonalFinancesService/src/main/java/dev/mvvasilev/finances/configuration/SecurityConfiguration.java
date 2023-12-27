@@ -11,9 +11,11 @@ import org.springframework.security.oauth2.jwt.JwtDecoders;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
 import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.filter.CommonsRequestLoggingFilter;
 
 @Configuration
+@EnableTransactionManagement
 public class SecurityConfiguration {
 
     @Value("${jwt.issuer-url}")
@@ -23,8 +25,7 @@ public class SecurityConfiguration {
             "/v3/api-docs/**",
             "/swagger-ui/**",
             "/v2/api-docs/**",
-            "/swagger-resources/**",
-            "/actuator/**"
+            "/swagger-resources/**"
     };
 
     @Bean

@@ -2,14 +2,16 @@ package dev.mvvasilev.finances.controllers;
 
 import dev.mvvasilev.common.controller.AbstractRestController;
 import dev.mvvasilev.common.web.APIResponseDTO;
+import dev.mvvasilev.common.web.CrudResponseDTO;
+import dev.mvvasilev.finances.dtos.CreateTransactionMappingDTO;
+import dev.mvvasilev.finances.dtos.TransactionMappingDTO;
 import dev.mvvasilev.finances.dtos.TransactionValueGroupDTO;
 import dev.mvvasilev.finances.dtos.UploadedStatementDTO;
 import dev.mvvasilev.finances.services.StatementsService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -21,7 +23,7 @@ import java.util.Collection;
 @RequestMapping("/statements")
 public class StatementsController extends AbstractRestController {
 
-    private StatementsService statementsService;
+    final private StatementsService statementsService;
 
     @Autowired
     public StatementsController(StatementsService statementsService) {
@@ -30,33 +32,60 @@ public class StatementsController extends AbstractRestController {
 
     @GetMapping
     public ResponseEntity<APIResponseDTO<Collection<UploadedStatementDTO>>> fetchStatements(Authentication authentication) {
-        return ResponseEntity.ofNullable(
-                ok(statementsService.fetchStatementsForUser(Integer.parseInt(authentication.getName())))
-        );
+        return ok(statementsService.fetchStatementsForUser(Integer.parseInt(authentication.getName())));
     }
 
     @GetMapping("/{statementId}/transactionValueGroups")
-    public ResponseEntity<APIResponseDTO<Collection<TransactionValueGroupDTO>>> fetchTransactionValueGroups(@PathVariable("statementId") Long statementId, Authentication authentication) {
-        return ResponseEntity.ofNullable(ok(
-                statementsService.fetchTransactionValueGroupsForUserStatement(statementId, Integer.parseInt(authentication.getName()))
-        ));
+    @PreAuthorize("@authService.isOwner(#statementId, T(dev.mvvasilev.finances.entity.RawStatement))")
+    public ResponseEntity<APIResponseDTO<Collection<TransactionValueGroupDTO>>> fetchTransactionValueGroups(
+            @PathVariable("statementId") Long statementId
+    ) {
+        return ok(statementsService.fetchTransactionValueGroupsForUserStatement(statementId));
+    }
+
+    @GetMapping("/{statementId}/mappings")
+    @PreAuthorize("@authService.isOwner(#statementId, T(dev.mvvasilev.finances.entity.RawStatement))")
+    public ResponseEntity<APIResponseDTO<Collection<TransactionMappingDTO>>> fetchTransactionMappings(
+            @PathVariable("statementId") Long statementId
+    ) {
+        return ok(statementsService.fetchMappingsForStatement(statementId));
+    }
+
+    @PostMapping("/{statementId}/mappings")
+    @PreAuthorize("@authService.isOwner(#statementId, T(dev.mvvasilev.finances.entity.RawStatement))")
+    public ResponseEntity<APIResponseDTO<Collection<CrudResponseDTO>>> createTransactionMappings(
+            @PathVariable("statementId") Long statementId,
+            @RequestBody Collection<CreateTransactionMappingDTO> body
+    ) {
+        return ok(statementsService.createTransactionMappingsForStatement(statementId, body));
+    }
+
+
+    @PostMapping("/{statementId}/process")
+    @PreAuthorize("@authService.isOwner(#statementId, T(dev.mvvasilev.finances.entity.RawStatement))")
+    public ResponseEntity<APIResponseDTO<Object>> processTransactions(@PathVariable("statementId") Long statementId) {
+        statementsService.processStatement(statementId);
+        return emptySuccess();
     }
 
     @DeleteMapping("/{statementId}")
-    public ResponseEntity<APIResponseDTO> deleteStatement(@PathVariable("statementId")  Long statementId, Authentication authentication) {
-        statementsService.deleteStatement(statementId, Integer.parseInt(authentication.getName()));
-        return ResponseEntity.ofNullable(ok(null));
+    @PreAuthorize("@authService.isOwner(#statementId, T(dev.mvvasilev.finances.entity.RawStatement))")
+    public ResponseEntity<APIResponseDTO<Object>> deleteStatement(@PathVariable("statementId")  Long statementId) {
+        statementsService.deleteStatement(statementId);
+
+        return emptySuccess();
     }
 
     @PostMapping(value = "/uploadSheet", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<APIResponseDTO<Integer>> uploadStatement(@RequestParam("file") MultipartFile file, Authentication authentication) throws IOException {
+    public ResponseEntity<APIResponseDTO<Object>> uploadStatement(@RequestParam("file") MultipartFile file, Authentication authentication) throws IOException {
         statementsService.uploadStatementFromExcelSheetForUser(
                 file.getOriginalFilename(),
                 file.getContentType(),
                 file.getInputStream(),
                 Integer.parseInt(authentication.getName())
         );
-        return ResponseEntity.ofNullable(ok(1));
+
+        return emptySuccess();
     }
 
 }

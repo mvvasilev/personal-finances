@@ -2,21 +2,40 @@ package dev.mvvasilev.common.controller;
 
 import dev.mvvasilev.common.web.APIErrorDTO;
 import dev.mvvasilev.common.web.APIResponseDTO;
+import dev.mvvasilev.common.web.CrudResponseDTO;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
-public class AbstractRestController {
+public abstract class AbstractRestController {
 
-    protected <T> APIResponseDTO<T> withStatus(int statusCode, String statusText, T body) {
-        return new APIResponseDTO<>(body, null, statusCode, statusText);
+    protected <T> ResponseEntity<APIResponseDTO<T>> withStatus(HttpStatus status, T body) {
+        return ResponseEntity.status(status).body(new APIResponseDTO<>(body, null, status.value(), status.getReasonPhrase()));
     }
 
-    protected <T> APIResponseDTO<T> withSingleError(int statusCode, String statusText, String errorMessage, String errorCode, String stacktrace) {
-        return new APIResponseDTO<>(null, List.of(new APIErrorDTO(errorMessage, errorCode, stacktrace)), statusCode, statusText);
+    protected <T> ResponseEntity<APIResponseDTO<T>> withSingleError(HttpStatus status, String errorMessage, String errorCode, String stacktrace) {
+        return ResponseEntity.status(status).body(new APIResponseDTO<>(null, List.of(new APIErrorDTO(errorMessage, errorCode, stacktrace)), status.value(), status.getReasonPhrase()));
     }
 
-    protected <T> APIResponseDTO<T> ok(T body) {
-        return withStatus(200, "ok", body);
+    protected <T> ResponseEntity<APIResponseDTO<T>> ok(T body) {
+        return withStatus(HttpStatus.OK, body);
+    }
+
+    protected <T> ResponseEntity<APIResponseDTO<Object>> emptySuccess() {
+        return withStatus(HttpStatus.OK, null);
+    }
+
+    protected <T> ResponseEntity<APIResponseDTO<CrudResponseDTO>> created(Long id) {
+        return withStatus(HttpStatus.CREATED, new CrudResponseDTO(id, null));
+    }
+
+    protected <T> ResponseEntity<APIResponseDTO<CrudResponseDTO>> updated(Integer affectedRows) {
+        return withStatus(HttpStatus.OK, new CrudResponseDTO(null, affectedRows));
+    }
+
+    protected <T> ResponseEntity<APIResponseDTO<CrudResponseDTO>> deleted(Integer affectedRows) {
+        return withStatus(HttpStatus.OK, new CrudResponseDTO(null, affectedRows));
     }
 
 }

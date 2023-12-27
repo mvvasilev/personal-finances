@@ -12,16 +12,18 @@ import java.util.Collection;
 @Repository
 public interface RawTransactionValueGroupRepository extends JpaRepository<RawTransactionValueGroup, Long> {
 
-    @Query(value =
-            "SELECT " +
-                    "rtvg.id, " +
-                    "rtvg.name, " +
-                    "rtvg.type " +
-            "FROM transactions.raw_transaction_value_group AS rtvg " +
-            "JOIN transactions.raw_statement AS rs ON rtvg.statement_id = rs.id " +
-            "WHERE rs.user_id = :userId AND rs.id = :statementId",
+    @Query(
+            value = """
+                    SELECT
+                        rtvg.id,
+                        rtvg.name,
+                        rtvg.type
+                    FROM transactions.raw_transaction_value_group AS rtvg
+                    JOIN transactions.raw_statement AS rs ON rtvg.statement_id = rs.id
+                    WHERE rs.id = :statementId
+                    """,
             nativeQuery = true
     )
-    Collection<RawTransactionValueGroupDTO> fetchAllForStatementAndUser(@Param("statementId") Long statementId, @Param("userId") Integer userId);
+    Collection<RawTransactionValueGroupDTO> fetchAllForStatement(@Param("statementId") Long statementId);
 
 }

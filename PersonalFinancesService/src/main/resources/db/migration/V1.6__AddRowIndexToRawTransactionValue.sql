@@ -1,1 +1,1 @@
-ALTER TABLE transactions.raw_transaction_value ADD row_index INTEGER NOT NULL;
+ALTER TABLE transactions.raw_transaction_value ADD COLUMN IF NOT EXISTS row_index INTEGER NOT NULL;

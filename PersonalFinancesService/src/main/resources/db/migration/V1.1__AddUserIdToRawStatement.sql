@@ -1,1 +1,1 @@
-ALTER TABLE transactions.raw_statement ADD user_id INTEGER NOT NULL;
+ALTER TABLE transactions.raw_statement ADD COLUMN IF NOT EXISTS user_id INTEGER NOT NULL;
