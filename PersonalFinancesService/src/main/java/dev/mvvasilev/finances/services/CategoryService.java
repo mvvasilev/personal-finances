@@ -1,6 +1,8 @@
 package dev.mvvasilev.finances.services;
 
+import dev.mvvasilev.common.data.AbstractEntity;
 import dev.mvvasilev.common.exceptions.CommonFinancesException;
+import dev.mvvasilev.common.web.CrudResponseDTO;
 import dev.mvvasilev.finances.dtos.*;
 import dev.mvvasilev.finances.entity.Categorization;
 import dev.mvvasilev.finances.entity.ProcessedTransaction;
@@ -10,8 +12,10 @@ import dev.mvvasilev.finances.persistence.CategorizationRepository;
 import dev.mvvasilev.finances.persistence.ProcessedTransactionCategoryRepository;
 import dev.mvvasilev.finances.persistence.ProcessedTransactionRepository;
 import dev.mvvasilev.finances.persistence.TransactionCategoryRepository;
+import org.apache.commons.compress.utils.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -22,6 +26,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class CategoryService {
 
     final private TransactionCategoryRepository transactionCategoryRepository;
@@ -175,6 +180,7 @@ public class CategoryService {
                             throw new CommonFinancesException("Invalid categorization: left does not exist");
                         }
 
+                        // TODO: Avoid recursion
                         yield matchesRule(allCategorizations, left.get(), processedTransaction) && matchesRule(allCategorizations, right.get(), processedTransaction);
                     }
                     case OR -> {
@@ -186,6 +192,7 @@ public class CategoryService {
                             throw new CommonFinancesException("Invalid categorization: left does not exist");
                         }
 
+                        // TODO: Avoid recursion
                         yield matchesRule(allCategorizations, left.get(), processedTransaction) || matchesRule(allCategorizations, right.get(), processedTransaction);
                     }
                     case NOT -> {
@@ -193,6 +200,7 @@ public class CategoryService {
                             throw new CommonFinancesException("Invalid categorization: right does not exist");
                         }
 
+                        // TODO: Avoid recursion
                         yield !matchesRule(allCategorizations, right.get(), processedTransaction);
                     }
                     default -> throw new CommonFinancesException("Invalid logical operation: %s", categorization.getCategorizationRule());
@@ -239,38 +247,48 @@ public class CategoryService {
     }
 
     public Collection<CategorizationDTO> fetchCategorizationRules(Long categoryId) {
-        return categorizationRepository.fetchForCategory(categoryId).stream()
-                .map(entity -> {
-                    // TODO: Recursion
-                })
+        return Lists.newArrayList();
+    }
+
+    public Collection<Long> createCategorizationRules(Long categoryId, Collection<CreateCategorizationDTO> dtos) {
+        categorizationRepository.deleteAllForCategory(categoryId);
+
+        final var newCategorizations = dtos.stream()
+                .map(dto -> saveCategorizationRule(categoryId, dto))
+                .toList();
+
+        return categorizationRepository.saveAllAndFlush(newCategorizations).stream()
+                .map(AbstractEntity::getId)
                 .toList();
     }
 
-    public Long createCategorizationRule(Long categoryId, Collection<CreateCategorizationDTO> dto) {
-        // TODO: Clear previous rules for category and replace with new ones
+    private Categorization saveCategorizationRule(Long categoryId, CreateCategorizationDTO dto) {
+        // TODO: Avoid recursion
 
-//        final var categorization = new Categorization();
-//
-//        categorization.setCategorizationRule(dto.rule());
-//        categorization.setCategoryId(categoryId);
-//        categorization.setStringValue(dto.stringValue());
-//        categorization.setNumericGreaterThan(dto.numericGreaterThan());
-//        categorization.setNumericLessThan(dto.numericLessThan());
-//        categorization.setNumericValue(dto.numericValue());
-//        categorization.setTimestampGreaterThan(dto.timestampGreaterThan());
-//        categorization.setTimestampLessThan(dto.timestampLessThan());
-//        categorization.setBooleanValue(dto.booleanValue());
-//
-//        if (dto.left() != null) {
-//            final var leftCat = createCategorizationRule(null, dto.left());
-//            categorization.setLeftCategorizationId(leftCat);
-//        }
-//
-//        if (dto.right() != null) {
-//            final var rightCat = createCategorizationRule(null, dto.right());
-//            categorization.setRightCategorizationId(rightCat);
-//        }
-//
-//        return categorizationRepository.save(categorization).getId();
+        final var categorization = new Categorization();
+
+        categorization.setCategorizationRule(dto.rule());
+        categorization.setCategoryId(null);
+        categorization.setStringValue(dto.stringValue());
+        categorization.setNumericGreaterThan(dto.numericGreaterThan());
+        categorization.setNumericLessThan(dto.numericLessThan());
+        categorization.setNumericValue(dto.numericValue());
+        categorization.setTimestampGreaterThan(dto.timestampGreaterThan());
+        categorization.setTimestampLessThan(dto.timestampLessThan());
+        categorization.setBooleanValue(dto.booleanValue());
+
+        // Only root rules have category id set, to differentiate them from non-roots
+        // TODO: This smells bad. Add an isRoot property instead?
+        if (dto.left() != null) {
+            final var leftCat = saveCategorizationRule(null, dto.left());
+            categorization.setLeftCategorizationId(leftCat.getId());
+        }
+
+        if (dto.right() != null) {
+            final var rightCat = saveCategorizationRule(null, dto.right());
+            categorization.setRightCategorizationId(rightCat.getId());
+        }
+
+        return categorizationRepository.saveAndFlush(categorization);
     }
 }

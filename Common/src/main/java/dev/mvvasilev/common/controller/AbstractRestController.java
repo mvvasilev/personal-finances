@@ -6,7 +6,9 @@ import dev.mvvasilev.common.web.CrudResponseDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public abstract class AbstractRestController {
 
@@ -28,6 +30,15 @@ public abstract class AbstractRestController {
 
     protected <T> ResponseEntity<APIResponseDTO<CrudResponseDTO>> created(Long id) {
         return withStatus(HttpStatus.CREATED, new CrudResponseDTO(id, null));
+    }
+
+    protected <T> ResponseEntity<APIResponseDTO<Collection<CrudResponseDTO>>> created(Collection<Long> ids) {
+        return withStatus(
+                HttpStatus.CREATED,
+                ids.stream()
+                        .map(id -> new CrudResponseDTO(id, null))
+                        .collect(Collectors.toList())
+        );
     }
 
     protected <T> ResponseEntity<APIResponseDTO<CrudResponseDTO>> updated(Integer affectedRows) {

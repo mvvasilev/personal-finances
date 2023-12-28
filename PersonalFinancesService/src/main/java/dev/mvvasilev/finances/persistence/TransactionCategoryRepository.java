@@ -3,6 +3,7 @@ package dev.mvvasilev.finances.persistence;
 import dev.mvvasilev.finances.dtos.CategoryDTO;
 import dev.mvvasilev.finances.entity.TransactionCategory;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -15,5 +16,6 @@ public interface TransactionCategoryRepository extends JpaRepository<Transaction
     Collection<TransactionCategory> fetchTransactionCategoriesWithUserId(@Param("userId") int userId);
 
     @Query(value = "UPDATE categories.transaction_category SET name = :name WHERE id = :categoryId", nativeQuery = true)
+    @Modifying
     int updateTransactionCategoryName(@Param("categoryId") Long categoryId, @Param("name") String name);
 }

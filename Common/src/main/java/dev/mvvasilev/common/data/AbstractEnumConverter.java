@@ -18,6 +18,10 @@ public abstract class AbstractEnumConverter<T extends Enum<T> & PersistableEnum<
 
     @Override
     public T convertToEntityAttribute(E dbData) {
+        if (dbData == null) {
+            return null;
+        }
+
         T[] enums = clazz.getEnumConstants();
 
         for (T e : enums) {
@@ -26,6 +30,6 @@ public abstract class AbstractEnumConverter<T extends Enum<T> & PersistableEnum<
             }
         }
 
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException(String.format("Can't find value '%s' for enum '%s'", dbData, clazz.getCanonicalName()));
     }
 }

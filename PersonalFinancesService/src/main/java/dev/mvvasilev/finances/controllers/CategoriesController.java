@@ -60,21 +60,21 @@ public class CategoriesController extends AbstractRestController {
 
     @PostMapping("/{categoryId}/rules")
     @PreAuthorize("@authService.isOwner(#categoryId, T(dev.mvvasilev.finances.entity.TransactionCategory))")
-    public ResponseEntity<APIResponseDTO<CrudResponseDTO>> createCategorizationRule(
+    public ResponseEntity<APIResponseDTO<Collection<CrudResponseDTO>>> createCategorizationRule(
             @PathVariable("categoryId") Long categoryId,
             @RequestBody Collection<CreateCategorizationDTO> dto
     ) {
-        return created(categoryService.createCategorizationRule(categoryId, dto));
+        return created(categoryService.createCategorizationRules(categoryId, dto));
     }
 
-    @DeleteMapping("/{categoryId}/rules/{ruleId}")
-    @PreAuthorize("@authService.isOwner(#categoryId, T(dev.mvvasilev.finances.entity.TransactionCategory))")
-    public ResponseEntity<APIResponseDTO<CrudResponseDTO>> deleteCategorizationRule(
-            @PathVariable("categoryId") Long categoryId,
-            @PathVariable("ruleId") Long ruleId
-    ) {
-        return deleted(categoryService.deleteCategorizationRule(ruleId));
-    }
+//    @DeleteMapping("/{categoryId}/rules/{ruleId}")
+//    @PreAuthorize("@authService.isOwner(#categoryId, T(dev.mvvasilev.finances.entity.TransactionCategory))")
+//    public ResponseEntity<APIResponseDTO<CrudResponseDTO>> deleteCategorizationRule(
+//            @PathVariable("categoryId") Long categoryId,
+//            @PathVariable("ruleId") Long ruleId
+//    ) {
+//        return deleted(categoryService.deleteCategorizationRule(ruleId));
+//    }
 
     @PostMapping("/categorize")
     public ResponseEntity<APIResponseDTO<Object>> categorizeTransactions(Authentication authentication) {

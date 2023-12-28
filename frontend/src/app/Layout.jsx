@@ -11,19 +11,21 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import {Home as HomeIcon} from '@mui/icons-material';
+import {ReceiptLong as StatementsIcon} from '@mui/icons-material';
 import {Receipt as TransactionsIcon} from '@mui/icons-material';
+import {Category as CategoryIcon} from '@mui/icons-material';
 import {Logout as LogoutIcon} from '@mui/icons-material';
 import {Login as LoginIcon} from "@mui/icons-material";
 import {Toaster} from 'react-hot-toast';
 import theme from '../components/ThemeRegistry/theme';
-import Button from "@mui/material/Button";
-import Grid from "@mui/material/Unstable_Grid2";
 
 const DRAWER_WIDTH = 240;
 
 const NAV_LINKS = [
     {text: 'Home', to: '/', icon: HomeIcon},
-    {text: 'Statements', to: '/statements', icon: TransactionsIcon},
+    {text: 'Statements', to: '/statements', icon: StatementsIcon},
+    {text: 'Categories', to: '/categories', icon: CategoryIcon},
+    {text: 'Transactions', to: '/transactions', icon: TransactionsIcon},
 ];
 
 const BOTTOM_LINKS = [

@@ -2,8 +2,10 @@ package dev.mvvasilev.finances.enums;
 
 import dev.mvvasilev.common.data.AbstractEnumConverter;
 import dev.mvvasilev.common.data.PersistableEnum;
+import dev.mvvasilev.finances.entity.ProcessedTransaction;
 
-// TODO: Create custom converter for JPA
+import java.lang.reflect.Method;
+
 public enum ProcessedTransactionField implements PersistableEnum<String> {
     DESCRIPTION(RawTransactionValueType.STRING),
     AMOUNT(RawTransactionValueType.NUMERIC),
@@ -15,7 +17,6 @@ public enum ProcessedTransactionField implements PersistableEnum<String> {
     ProcessedTransactionField(RawTransactionValueType type) {
         this.type = type;
     }
-
 
     public String value() {
         return name();

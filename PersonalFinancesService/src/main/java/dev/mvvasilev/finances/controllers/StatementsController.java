@@ -3,10 +3,8 @@ package dev.mvvasilev.finances.controllers;
 import dev.mvvasilev.common.controller.AbstractRestController;
 import dev.mvvasilev.common.web.APIResponseDTO;
 import dev.mvvasilev.common.web.CrudResponseDTO;
-import dev.mvvasilev.finances.dtos.CreateTransactionMappingDTO;
-import dev.mvvasilev.finances.dtos.TransactionMappingDTO;
-import dev.mvvasilev.finances.dtos.TransactionValueGroupDTO;
-import dev.mvvasilev.finances.dtos.UploadedStatementDTO;
+import dev.mvvasilev.finances.dtos.*;
+import dev.mvvasilev.finances.enums.MappingConversionType;
 import dev.mvvasilev.finances.services.StatementsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -17,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 
 @RestController
@@ -51,6 +50,15 @@ public class StatementsController extends AbstractRestController {
         return ok(statementsService.fetchMappingsForStatement(statementId));
     }
 
+    @GetMapping("/supported-conversions")
+    public ResponseEntity<APIResponseDTO<Collection<SupportedMappingConversionDTO>>> fetchTransactionMappings() {
+        return ok(Arrays.stream(MappingConversionType.values()).map(conv -> new SupportedMappingConversionDTO(
+                conv,
+                conv.getFrom(),
+                conv.getTo()
+        )).toList());
+    }
+
     @PostMapping("/{statementId}/mappings")
     @PreAuthorize("@authService.isOwner(#statementId, T(dev.mvvasilev.finances.entity.RawStatement))")
     public ResponseEntity<APIResponseDTO<Collection<CrudResponseDTO>>> createTransactionMappings(
@@ -63,8 +71,8 @@ public class StatementsController extends AbstractRestController {
 
     @PostMapping("/{statementId}/process")
     @PreAuthorize("@authService.isOwner(#statementId, T(dev.mvvasilev.finances.entity.RawStatement))")
-    public ResponseEntity<APIResponseDTO<Object>> processTransactions(@PathVariable("statementId") Long statementId) {
-        statementsService.processStatement(statementId);
+    public ResponseEntity<APIResponseDTO<Object>> processTransactions(@PathVariable("statementId") Long statementId, Authentication authentication) {
+        statementsService.processStatement(statementId, Integer.parseInt(authentication.getName()));
         return emptySuccess();
     }
 

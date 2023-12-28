@@ -1,5 +1,4 @@
 import Button from "@mui/material/Button";
-import Box from "@mui/material/Box";
 import { CloudUpload as CloudUploadIcon } from "@mui/icons-material";
 import VisuallyHiddenInput from "@/components/VisuallyHiddenInput.jsx";
 import toast from "react-hot-toast";
@@ -7,10 +6,8 @@ import utils from "@/utils.js";
 import Grid from "@mui/material/Unstable_Grid2";
 import {useEffect, useState} from "react";
 import {Stack} from "@mui/material";
-import VisNetwork from "@/components/statements/VisNetwork.jsx";
 import StatementCard from "@/components/statements/StatementCard.jsx";
 import Carousel from "react-material-ui-carousel";
-import NodeModal from "@/components/statements/NodeModal.jsx";
 import StatementMappingEditor from "@/components/statements/StatementMappingEditor.jsx";
 
 
@@ -18,12 +15,10 @@ export default function StatementsPage() {
 
     const [statements, setStatements] = useState([]);
 
-    const [valueGroups, setValueGroups] = useState([]);
+    const [mappingStatementId, setMappingStatementId] = useState(-1);
 
     useEffect(() => {
-        utils.performRequest("/api/statements")
-            .then(resp => resp.json())
-            .then(({ result }) => setStatements(result));
+        fetchStatements();
     }, []);
 
     function fetchStatements() {
@@ -55,17 +50,8 @@ export default function StatementsPage() {
         );
     }
 
-    async function mapStatement(e, statementId) {
-        await toast.promise(
-            utils.performRequest(`/api/statements/${statementId}/transactionValueGroups`)
-                .then(res => res.json())
-                .then(json => setValueGroups(json.result)),
-            {
-                loading: "Preparing...",
-                success: "Ready",
-                error: (err) => `Uh oh, something went wrong: ${err}`
-            }
-        );
+    function mapStatement(e, statementId) {
+        setMappingStatementId(statementId);
     }
 
     async function deleteStatement(e, statementId) {
@@ -84,7 +70,7 @@ export default function StatementsPage() {
     }
 
     function createCarouselItems() {
-        let carouselItemCount = Math.ceil(statements.length / 4) || 1;
+        let carouselItemCount = Math.ceil(statements.length / 4) ?? 1;
 
         let carouselItems = [];
 
@@ -97,7 +83,13 @@ export default function StatementsPage() {
             }
 
             carouselItems.push(
-                <Grid key={i} container spacing={2}>
+                <Grid
+                    key={i}
+                    container
+                    spacing={2}
+                    pl={7}
+                    pr={7}
+                >
                     {
                         statements.slice(firstIndex, lastIndex).map((statement) => (
                             <Grid key={statement.id} xs={3}>
@@ -118,8 +110,6 @@ export default function StatementsPage() {
         return carouselItems;
     }
 
-    var i = 0;
-
     return (
         <Stack>
             <div>
@@ -134,20 +124,25 @@ export default function StatementsPage() {
                     <Grid xs={9}></Grid>
 
                     <Grid xs={12}>
-                        <Carousel
-                            cycleNavigation
-                            fullHeightHover
-                            swipe
-                            animation={"slide"}
-                            duration={100}
-                            autoPlay={false}
-                        >
-                            {createCarouselItems()}
-                        </Carousel>
+                        {(statements && statements.length > 0) &&
+                            <Carousel
+                                cycleNavigation
+                                fullHeightHover
+                                swipe
+                                animation={"slide"}
+                                duration={100}
+                                autoPlay={false}
+                            >
+                                {createCarouselItems()}
+                            </Carousel>
+                        }
                     </Grid>
 
                     <Grid xs={12}>
-                        <StatementMappingEditor valueGroups={valueGroups} />
+                        {
+                            mappingStatementId !== -1 &&
+                            <StatementMappingEditor statementId={mappingStatementId}/>
+                        }
                     </Grid>
                 </Grid>
             </div>

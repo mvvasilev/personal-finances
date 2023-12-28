@@ -1,23 +1,18 @@
 package dev.mvvasilev.finances.services;
 
+import dev.mvvasilev.common.data.AbstractEntity;
+import dev.mvvasilev.common.exceptions.CommonFinancesException;
 import dev.mvvasilev.common.web.CrudResponseDTO;
-import dev.mvvasilev.finances.dtos.CreateTransactionMappingDTO;
-import dev.mvvasilev.finances.dtos.TransactionMappingDTO;
-import dev.mvvasilev.finances.dtos.TransactionValueGroupDTO;
-import dev.mvvasilev.finances.dtos.UploadedStatementDTO;
-import dev.mvvasilev.finances.entity.RawStatement;
-import dev.mvvasilev.finances.entity.RawTransactionValue;
-import dev.mvvasilev.finances.entity.RawTransactionValueGroup;
-import dev.mvvasilev.finances.entity.TransactionMapping;
+import dev.mvvasilev.finances.dtos.*;
+import dev.mvvasilev.finances.entity.*;
 import dev.mvvasilev.finances.enums.ProcessedTransactionField;
 import dev.mvvasilev.finances.enums.RawTransactionValueType;
-import dev.mvvasilev.finances.persistence.RawStatementRepository;
-import dev.mvvasilev.finances.persistence.RawTransactionValueGroupRepository;
-import dev.mvvasilev.finances.persistence.RawTransactionValueRepository;
-import dev.mvvasilev.finances.persistence.TransactionMappingRepository;
+import dev.mvvasilev.finances.persistence.*;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,9 +26,11 @@ import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoField;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class StatementsService {
 
     private static final DateTimeFormatter DATE_FORMAT = new DateTimeFormatterBuilder()
@@ -44,6 +41,8 @@ public class StatementsService {
             .toFormatter()
             .withResolverStyle(ResolverStyle.LENIENT);
 
+    private final Logger logger = LoggerFactory.getLogger(StatementsService.class);
+
     private final RawStatementRepository rawStatementRepository;
 
     private final RawTransactionValueGroupRepository rawTransactionValueGroupRepository;
@@ -52,12 +51,15 @@ public class StatementsService {
 
     private final TransactionMappingRepository transactionMappingRepository;
 
+    private final ProcessedTransactionRepository processedTransactionRepository;
+
     @Autowired
-    public StatementsService(RawStatementRepository rawStatementRepository, RawTransactionValueGroupRepository rawTransactionValueGroupRepository, RawTransactionValueRepository rawTransactionValueRepository, TransactionMappingRepository transactionMappingRepository) {
+    public StatementsService(RawStatementRepository rawStatementRepository, RawTransactionValueGroupRepository rawTransactionValueGroupRepository, RawTransactionValueRepository rawTransactionValueRepository, TransactionMappingRepository transactionMappingRepository, ProcessedTransactionRepository processedTransactionRepository) {
         this.rawStatementRepository = rawStatementRepository;
         this.rawTransactionValueGroupRepository = rawTransactionValueGroupRepository;
         this.rawTransactionValueRepository = rawTransactionValueRepository;
         this.transactionMappingRepository = transactionMappingRepository;
+        this.processedTransactionRepository = processedTransactionRepository;
     }
 
 
@@ -203,13 +205,26 @@ public class StatementsService {
                 .map(entity -> new TransactionMappingDTO(
                                 entity.getId(),
                                 entity.getRawTransactionValueGroupId(),
-                                entity.getProcessedTransactionField()
+                                new ProcessedTransactionFieldDTO(
+                                        entity.getProcessedTransactionField(),
+                                        entity.getProcessedTransactionField().type()
+                                ),
+                                entity.getConversionType() != null ?
+                                new SupportedMappingConversionDTO(
+                                        entity.getConversionType(),
+                                        entity.getConversionType().getFrom(),
+                                        entity.getConversionType().getTo()
+                                ) : null,
+                                entity.getTrueBranchStringValue(),
+                                entity.getFalseBranchStringValue()
                         )
                 )
                 .toList();
     }
 
     public Collection<CrudResponseDTO> createTransactionMappingsForStatement(Long statementId, Collection<CreateTransactionMappingDTO> dtos) {
+        transactionMappingRepository.deleteAllForStatement(statementId);
+
         return transactionMappingRepository.saveAllAndFlush(
                     dtos.stream()
                         .map(dto -> {
@@ -217,6 +232,12 @@ public class StatementsService {
 
                             mapping.setRawTransactionValueGroupId(dto.rawTransactionValueGroupId());
                             mapping.setProcessedTransactionField(dto.field());
+
+                            if (dto.conversionType() != null) {
+                                mapping.setConversionType(dto.conversionType());
+                                mapping.setTrueBranchStringValue(dto.trueBranchStringValue());
+                                mapping.setFalseBranchStringValue(dto.falseBranchStringValue());
+                            }
 
                             return mapping;
                         })
@@ -228,11 +249,98 @@ public class StatementsService {
 
     }
 
-    public void processStatement(Long statementId) {
+    public void processStatement(Long statementId, Integer userId) {
+        processedTransactionRepository.deleteProcessedTransactionsForStatement(statementId);
+
         final var mappings = transactionMappingRepository.fetchTransactionMappingsWithStatementId(statementId);
-        final var mappingByField = new HashMap<ProcessedTransactionField, Long>();
 
-        mappings.forEach(m -> mappingByField.put(m.getProcessedTransactionField(), m.getRawTransactionValueGroupId()));
+        final var processedTransactions = rawTransactionValueRepository
+                .fetchAllValuesForValueGroups(mappings.stream().map(TransactionMapping::getRawTransactionValueGroupId).toList())
+                .stream()
+                .collect(Collectors.groupingBy(RawTransactionValue::getRowIndex, HashMap::new, Collectors.toCollection(ArrayList::new)))
+                .values()
+                .stream()
+                .map(rawTransactionValues -> {
+                    final var transaction = mapValuesToTransaction(rawTransactionValues, mappings);
 
+                    transaction.setStatementId(statementId);
+                    transaction.setUserId(userId);
+
+                    return transaction;
+                })
+                .toList();
+
+        processedTransactionRepository.saveAllAndFlush(processedTransactions);
+    }
+
+    private ProcessedTransaction mapValuesToTransaction(List<RawTransactionValue> values, final Collection<TransactionMapping> mappings) {
+        final var processedTransaction = new ProcessedTransaction();
+
+        values.forEach(value -> {
+            final var mapping = mappings.stream()
+                    .filter(m -> Objects.equals(m.getRawTransactionValueGroupId(), value.getGroupId()))
+                    .findFirst()
+                    .orElseThrow(() -> new CommonFinancesException("Unable to map values to transaction: no mapping found for group"));
+
+            final var conversionType = mapping.getConversionType();
+
+            // Not converting
+            if (conversionType == null) {
+
+                // Map the field from the uploaded statement to the final processed transaction
+                // 1. Fetch the class field using the mapping FIELD_NAMES
+                // 2. Determine the type of field from the enum ( avoid using more reflection than necessary )
+                // 3. Set the new value of the field
+                // This should work fine for new fields as well, so long as the ProcessedTransactionField enum and FIELD_NAMES is maintained.
+                // If only Java had a better way of doing this.
+
+                try {
+                    final var classField = ProcessedTransaction.class.getDeclaredField(ProcessedTransaction.FIELD_NAMES.get(mapping.getProcessedTransactionField()));
+
+                    classField.setAccessible(true);
+
+                    switch (mapping.getProcessedTransactionField().type()) {
+                        case STRING -> classField.set(processedTransaction, value.getStringValue());
+                        case NUMERIC -> classField.set(processedTransaction, value.getNumericValue());
+                        case TIMESTAMP -> classField.set(processedTransaction, value.getTimestampValue());
+                        case BOOLEAN -> classField.set(processedTransaction, value.getBooleanValue());
+                    }
+                } catch (NoSuchFieldException | IllegalAccessException e) {
+                    logger.error("Error while mapping statement.", e);
+                }
+
+                return;
+            }
+
+            // If converting, first pass the value through conversion, then set it to the field as described above
+
+            // TODO: Expand on this. Or maybe better yet, don't - figure out a better way.
+            switch (conversionType) {
+                case STRING_TO_BOOLEAN -> {
+                    if (mapping.getProcessedTransactionField().type() != RawTransactionValueType.BOOLEAN) {
+                        logger.error("Invalid conversion type: is {}, but expected {}", conversionType.getTo(), mapping.getProcessedTransactionField().type());
+                        break;
+                    }
+
+                    boolean result = convertStringToBoolean(value.getStringValue(), mapping.getTrueBranchStringValue(), mapping.getFalseBranchStringValue());
+
+                    try {
+                        final var classField = ProcessedTransaction.class.getDeclaredField(ProcessedTransaction.FIELD_NAMES.get(mapping.getProcessedTransactionField()));
+
+                        classField.setAccessible(true);
+
+                        classField.set(processedTransaction, result);
+                    } catch (NoSuchFieldException | IllegalAccessException e) {
+                        logger.error("Error while mapping statement.", e);
+                    }
+                }
+            }
+        });
+
+        return processedTransaction;
+    }
+
+    private boolean convertStringToBoolean(String stringValue, String trueBranchStringValue, String falseBranchStringValue) {
+        return stringValue.equals(trueBranchStringValue);
     }
 }

@@ -1,9 +1,11 @@
 package dev.mvvasilev.finances.entity;
 
 import dev.mvvasilev.common.data.AbstractEntity;
+import dev.mvvasilev.finances.enums.ProcessedTransactionField;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Entity
 @Table(schema = "transactions")
