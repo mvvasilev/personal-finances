@@ -84,6 +84,7 @@ public class CategoryService {
 
         // Run each category's rules for all transactions in parallel to eachother
         final var futures = categorizations.stream()
+                .filter(Categorization::isRoot)
                 .collect(Collectors.groupingBy(Categorization::getCategoryId, HashMap::new, Collectors.toList()))
                 .entrySet()
                 .stream()
@@ -138,13 +139,14 @@ public class CategoryService {
     private boolean matchesRule(final Collection<Categorization> allCategorizations, final Categorization categorization, final ProcessedTransaction processedTransaction) {
         return switch (categorization.getCategorizationRule()) {
             // string operations
-            case STRING_REGEX, STRING_EQ, STRING_CONTAINS -> {
+            case STRING_REGEX, STRING_EQ, STRING_CONTAINS, STRING_IS_EMPTY -> {
                 final String fieldValue = fetchTransactionStringValue(categorization, processedTransaction);
 
                 yield switch (categorization.getCategorizationRule()) {
                     case STRING_EQ -> fieldValue.equalsIgnoreCase(categorization.getStringValue());
                     case STRING_REGEX -> fieldValue.matches(categorization.getStringValue());
-                    case STRING_CONTAINS -> fieldValue.contains(categorization.getStringValue());
+                    case STRING_CONTAINS -> fieldValue.toLowerCase().contains(categorization.getStringValue().toLowerCase());
+                    case STRING_IS_EMPTY -> fieldValue == null || fieldValue.isBlank();
                     default -> throw new CommonFinancesException("Unsupported string rule: %s", categorization.getCategorizationRule());
                 };
             }
@@ -271,7 +273,7 @@ public class CategoryService {
     public Collection<CategorizationDTO> fetchCategorizationRules(Long categoryId) {
         final var categorizations = categorizationRepository.fetchForCategory(categoryId);
         return categorizationRepository.fetchForCategory(categoryId).stream()
-                .filter(c -> c.getCategoryId() != null)
+                .filter(Categorization::isRoot)
                 .map(c -> mapCategorization(categorizations, c))
                 .toList();
     }
@@ -312,16 +314,17 @@ public class CategoryService {
         categorizationRepository.deleteAllForCategory(categoryId);
 
         return dtos.stream()
-                .map(dto -> saveCategorizationRule(categoryId, userId, dto).getId())
+                .map(dto -> saveCategorizationRule(true, categoryId, userId, dto).getId())
                 .toList();
     }
 
-    private Categorization saveCategorizationRule(Long categoryId, Integer userId, CreateCategorizationDTO dto) {
+    private Categorization saveCategorizationRule(boolean isRoot, Long categoryId, Integer userId, CreateCategorizationDTO dto) {
         // TODO: Avoid recursion
 
         final var categorization = new Categorization();
 
         categorization.setCategorizationRule(dto.rule());
+        categorization.setRoot(isRoot);
         categorization.setUserId(userId);
         categorization.setRuleBasedOn(dto.ruleBasedOn());
         categorization.setCategoryId(categoryId);
@@ -331,17 +334,17 @@ public class CategoryService {
         categorization.setNumericValue(dto.numericValue().orElse(null));
         categorization.setTimestampGreaterThan(dto.timestampGreaterThan().orElse(null));
         categorization.setTimestampLessThan(dto.timestampLessThan().orElse(null));
-        categorization.setBooleanValue(dto.booleanValue().orElse(null));
+        categorization.setBooleanValue(dto.booleanValue().orElse(false));
 
         // Only root rules have category id set, to differentiate them from non-roots
         // TODO: This smells bad. Add an isRoot property instead?
         if (dto.left() != null) {
-            final var leftCat = saveCategorizationRule(null, userId, dto.left());
+            final var leftCat = saveCategorizationRule(false, categoryId, userId, dto.left());
             categorization.setLeftCategorizationId(leftCat.getId());
         }
 
         if (dto.right() != null) {
-            final var rightCat = saveCategorizationRule(null, userId, dto.right());
+            final var rightCat = saveCategorizationRule(false, categoryId, userId, dto.right());
             categorization.setRightCategorizationId(rightCat.getId());
         }
 

@@ -13,13 +13,11 @@ import java.util.Collection;
 @Repository
 public interface CategorizationRepository extends JpaRepository<Categorization, Long> {
 
-    // We fetch only the ones with non-null category ids
-    // because ones with null category are used in AND, OR or NOT logical operations
     @Query(
             value = """
                     SELECT cat.*
                     FROM categories.categorization AS cat
-                    WHERE user_id = :userId AND category_id IS NOT NULL
+                    WHERE user_id = :userId
                     """,
             nativeQuery = true
     )
@@ -31,7 +29,7 @@ public interface CategorizationRepository extends JpaRepository<Categorization, 
                         childCats AS (
                             SELECT root.*
                             FROM categories.categorization AS root
-                            WHERE root.category_id = :categoryId
+                            WHERE root.category_id = :categoryId AND root.is_root = TRUE
                     
                             UNION ALL
                     

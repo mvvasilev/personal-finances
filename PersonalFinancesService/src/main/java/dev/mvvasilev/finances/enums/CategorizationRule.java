@@ -8,6 +8,7 @@ public enum CategorizationRule implements PersistableEnum<String> {
     STRING_REGEX(RawTransactionValueType.STRING),
     STRING_EQ(RawTransactionValueType.STRING),
     STRING_CONTAINS(RawTransactionValueType.STRING),
+    STRING_IS_EMPTY(RawTransactionValueType.STRING),
     NUMERIC_GREATER_THAN(RawTransactionValueType.NUMERIC),
     NUMERIC_LESS_THAN(RawTransactionValueType.NUMERIC),
     NUMERIC_EQUALS(RawTransactionValueType.NUMERIC),

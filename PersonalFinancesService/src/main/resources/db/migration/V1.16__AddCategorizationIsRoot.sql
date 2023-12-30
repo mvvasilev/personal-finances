@@ -1,0 +1,1 @@
+ALTER TABLE categories.categorization ADD COLUMN IF NOT EXISTS is_root BOOLEAN DEFAULT(FALSE);

@@ -22,6 +22,8 @@ public class Categorization extends AbstractEntity implements UserOwned {
     @Convert(converter = CategorizationRule.JpaConverter.class)
     private CategorizationRule categorizationRule;
 
+    private boolean isRoot;
+
     private String stringValue;
 
     private Double numericGreaterThan;
@@ -148,5 +150,13 @@ public class Categorization extends AbstractEntity implements UserOwned {
 
     public void setRightCategorizationId(Long rightCategorizationId) {
         this.rightCategorizationId = rightCategorizationId;
+    }
+
+    public boolean isRoot() {
+        return isRoot;
+    }
+
+    public void setRoot(boolean root) {
+        isRoot = root;
     }
 }

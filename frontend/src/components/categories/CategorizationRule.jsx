@@ -80,6 +80,7 @@ export default function CategorizationRule({ ruleData, fields, ruleTypes, onDele
             case "BOOLEAN_EQ":
             case "NUMERIC_EQUALS":
             case "STRING_EQ": return "equals";
+            case "STRING_IS_EMPTY": return "is empty";
             case "TIMESTAMP_GREATER_THAN": return "is later than";
             case "NUMERIC_GREATER_THAN": return "is greater than";
             case "TIMESTAMP_LESS_THAN": return "is earlier than";
@@ -220,6 +221,7 @@ export default function CategorizationRule({ ruleData, fields, ruleTypes, onDele
                     />
                 </Grid>
             );
+            case "STRING_IS_EMPTY": return ("");
             case "BOOLEAN_EQ": return (
                 <Grid xs={1} lg={1}>
                     <Checkbox
