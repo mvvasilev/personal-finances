@@ -4,10 +4,7 @@ import dev.mvvasilev.common.data.AbstractEntity;
 import dev.mvvasilev.common.exceptions.CommonFinancesException;
 import dev.mvvasilev.common.web.CrudResponseDTO;
 import dev.mvvasilev.finances.dtos.*;
-import dev.mvvasilev.finances.entity.Categorization;
-import dev.mvvasilev.finances.entity.ProcessedTransaction;
-import dev.mvvasilev.finances.entity.ProcessedTransactionCategory;
-import dev.mvvasilev.finances.entity.TransactionCategory;
+import dev.mvvasilev.finances.entity.*;
 import dev.mvvasilev.finances.persistence.CategorizationRepository;
 import dev.mvvasilev.finances.persistence.ProcessedTransactionCategoryRepository;
 import dev.mvvasilev.finances.persistence.ProcessedTransactionRepository;
@@ -18,10 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -64,14 +58,15 @@ public class CategoryService {
     public Collection<CategoryDTO> listForUser(int userId) {
         return transactionCategoryRepository.fetchTransactionCategoriesWithUserId(userId)
                 .stream()
-                .map(entity -> new CategoryDTO(entity.getId(), entity.getName()))
+                .map(entity -> new CategoryDTO(entity.getId(), entity.getName(), entity.getRuleBehavior()))
                 .collect(Collectors.toList());
     }
 
     public int update(Long categoryId, UpdateCategoryDTO dto) {
         return transactionCategoryRepository.updateTransactionCategoryName(
                 categoryId,
-                dto.name()
+                dto.name(),
+                dto.ruleBehavior()
         );
     }
 
@@ -81,28 +76,53 @@ public class CategoryService {
     }
 
     public void categorizeForUser(int userId) {
+        final var categories = transactionCategoryRepository.fetchTransactionCategoriesWithUserId(userId);
         final var categorizations = categorizationRepository.fetchForUser(userId);
         final var transactions = processedTransactionRepository.fetchForUser(userId);
 
-        // Run all the categorization rules async
+        // Run each category's rules for all transactions in parallel to eachother
         final var futures = categorizations.stream()
-                .map(c -> CompletableFuture.supplyAsync(() ->
-                        transactions.stream()
-                                .map((transaction) -> categorizeTransaction(categorizations, c, transaction))
-                                .filter(Optional::isPresent)
-                                .map(Optional::get)
-                                .toList())
-                )
+                .collect(Collectors.groupingBy(Categorization::getCategoryId, HashMap::new, Collectors.toList()))
+                .entrySet()
+                .stream()
+                .map(entry -> CompletableFuture.supplyAsync(() -> {
+                    final var categoryId = entry.getKey();
+                    final var rules = entry.getValue();
+
+                    final var category = categories.stream().filter(c -> c.getId() == categoryId).findFirst();
+
+                    if (category.isEmpty()) {
+                        throw new CommonFinancesException("Orphaned categorization, invalid categoryId");
+                    }
+
+                    return transactions.stream()
+                            .map(transaction -> {
+                                final var matches = switch (category.get().getRuleBehavior()) {
+                                    case ANY -> rules.stream().anyMatch(r -> matchesRule(categorizations, r, transaction));
+                                    case ALL -> rules.stream().allMatch(r -> matchesRule(categorizations, r, transaction));
+                                    case NONE -> rules.stream().noneMatch(r -> matchesRule(categorizations, r, transaction));
+                                };
+
+                                if (matches) {
+                                    return Optional.of(new ProcessedTransactionCategory(transaction.getId(), categoryId));
+                                } else {
+                                    return Optional.<ProcessedTransactionCategory>empty();
+                                }
+                            })
+                            .filter(Optional::isPresent)
+                            .map(Optional::get)
+                            .toList();
+                }))
                 .toArray(length -> (CompletableFuture<List<ProcessedTransactionCategory>>[]) new CompletableFuture[length]);
 
         // Run them all in parallel
-        final var categories = CompletableFuture.allOf(futures).thenApply((v) ->
+        final var ptcs = CompletableFuture.allOf(futures).thenApply((v) ->
                 Arrays.stream(futures)
                         .flatMap(future -> future.join().stream())
                         .toList()
         ).join();
 
-        processedTransactionCategoryRepository.saveAllAndFlush(categories);
+        processedTransactionCategoryRepository.saveAllAndFlush(ptcs);
     }
 
     private Optional<ProcessedTransactionCategory> categorizeTransaction(final Collection<Categorization> allCategorizations, Categorization categorization, ProcessedTransaction processedTransaction) {
@@ -247,45 +267,79 @@ public class CategoryService {
     }
 
     public Collection<CategorizationDTO> fetchCategorizationRules(Long categoryId) {
-        return Lists.newArrayList();
+        final var categorizations = categorizationRepository.fetchForCategory(categoryId);
+        return categorizationRepository.fetchForCategory(categoryId).stream()
+                .filter(c -> c.getCategoryId() != null)
+                .map(c -> mapCategorization(categorizations, c))
+                .toList();
     }
 
-    public Collection<Long> createCategorizationRules(Long categoryId, Collection<CreateCategorizationDTO> dtos) {
+    private CategorizationDTO mapCategorization(final Collection<Categorization> all, Categorization categorization) {
+        return new CategorizationDTO(
+                categorization.getId(),
+                new CategorizationRuleDTO(
+                        categorization.getCategorizationRule(),
+                        categorization.getCategorizationRule().applicableForType()
+                ),
+                categorization.getRuleBasedOn() != null ?
+                new ProcessedTransactionFieldDTO(
+                        categorization.getRuleBasedOn(),
+                        categorization.getRuleBasedOn().type()
+                ) : null,
+                categorization.getStringValue(),
+                categorization.getNumericGreaterThan(),
+                categorization.getNumericLessThan(),
+                categorization.getNumericValue(),
+                categorization.getTimestampGreaterThan(),
+                categorization.getTimestampLessThan(),
+                categorization.getBooleanValue(),
+                all.stream()
+                        .filter(lc -> categorization.getLeftCategorizationId() != null && lc.getId() == categorization.getLeftCategorizationId())
+                        .findFirst()
+                        .map(c -> mapCategorization(all, c))
+                        .orElse(null),
+                all.stream()
+                        .filter(lc -> categorization.getRightCategorizationId() != null && lc.getId() == categorization.getRightCategorizationId())
+                        .findFirst()
+                        .map(c -> mapCategorization(all, c))
+                        .orElse(null)
+        );
+    }
+
+    public Collection<Long> createCategorizationRules(Long categoryId, Integer userId, Collection<CreateCategorizationDTO> dtos) {
         categorizationRepository.deleteAllForCategory(categoryId);
 
-        final var newCategorizations = dtos.stream()
-                .map(dto -> saveCategorizationRule(categoryId, dto))
-                .toList();
-
-        return categorizationRepository.saveAllAndFlush(newCategorizations).stream()
-                .map(AbstractEntity::getId)
+        return dtos.stream()
+                .map(dto -> saveCategorizationRule(categoryId, userId, dto).getId())
                 .toList();
     }
 
-    private Categorization saveCategorizationRule(Long categoryId, CreateCategorizationDTO dto) {
+    private Categorization saveCategorizationRule(Long categoryId, Integer userId, CreateCategorizationDTO dto) {
         // TODO: Avoid recursion
 
         final var categorization = new Categorization();
 
         categorization.setCategorizationRule(dto.rule());
-        categorization.setCategoryId(null);
-        categorization.setStringValue(dto.stringValue());
-        categorization.setNumericGreaterThan(dto.numericGreaterThan());
-        categorization.setNumericLessThan(dto.numericLessThan());
-        categorization.setNumericValue(dto.numericValue());
-        categorization.setTimestampGreaterThan(dto.timestampGreaterThan());
-        categorization.setTimestampLessThan(dto.timestampLessThan());
-        categorization.setBooleanValue(dto.booleanValue());
+        categorization.setUserId(userId);
+        categorization.setRuleBasedOn(dto.ruleBasedOn());
+        categorization.setCategoryId(categoryId);
+        categorization.setStringValue(dto.stringValue().orElse(null));
+        categorization.setNumericGreaterThan(dto.numericGreaterThan().orElse(null));
+        categorization.setNumericLessThan(dto.numericLessThan().orElse(null));
+        categorization.setNumericValue(dto.numericValue().orElse(null));
+        categorization.setTimestampGreaterThan(dto.timestampGreaterThan().orElse(null));
+        categorization.setTimestampLessThan(dto.timestampLessThan().orElse(null));
+        categorization.setBooleanValue(dto.booleanValue().orElse(null));
 
         // Only root rules have category id set, to differentiate them from non-roots
         // TODO: This smells bad. Add an isRoot property instead?
         if (dto.left() != null) {
-            final var leftCat = saveCategorizationRule(null, dto.left());
+            final var leftCat = saveCategorizationRule(null, userId, dto.left());
             categorization.setLeftCategorizationId(leftCat.getId());
         }
 
         if (dto.right() != null) {
-            final var rightCat = saveCategorizationRule(null, dto.right());
+            final var rightCat = saveCategorizationRule(null, userId, dto.right());
             categorization.setRightCategorizationId(rightCat.getId());
         }
 

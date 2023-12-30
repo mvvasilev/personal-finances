@@ -20,7 +20,7 @@ export default function StatementCard({ name, timeUploaded, id, onMap, onDelete 
                 <Button variant="contained" size="small" onClick={(e) => onMap(e, id)} startIcon={<AccountTreeIcon />}>
                     Map
                 </Button>
-                <Button variant="contained" size="small" onClick={(e) => onDelete(e, id)} startIcon={<DeleteIcon />}>
+                <Button variant="outlined" color="error" size="small" onClick={(e) => onDelete(e, id)} startIcon={<DeleteIcon />}>
                     Delete
                 </Button>
             </CardActions>

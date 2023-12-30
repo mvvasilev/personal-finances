@@ -7,7 +7,9 @@ import java.time.LocalDateTime;
 public record CategorizationDTO(
         Long id,
 
-        CategorizationRule rule,
+        CategorizationRuleDTO rule,
+
+        ProcessedTransactionFieldDTO ruleBasedOn,
 
         String stringValue,
 

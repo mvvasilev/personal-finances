@@ -25,27 +25,21 @@ public interface CategorizationRepository extends JpaRepository<Categorization, 
     )
     Collection<Categorization> fetchForUser(@Param("userId") int userId);
 
-    // TODO: Use Recursive CTE
     @Query(
             value = """
-                    WITH RECURSIVE cats AS (
-                        SELECT cat.*
-                        FROM categories.categorization AS cat
-                        WHERE cat.category_id = :categoryId
-                        
-                        UNION ALL
-                        
-                        SELECT l.*
-                        FROM categories.categorization AS l
-                        JOIN cats ON cats.`left` = l.id
-                        
-                        UNION ALL
-                        
-                        SELECT r.*
-                        FROM categories.categorization AS r
-                        JOIN cats ON cats.`right` = r.id
-                    )
-                    SELECT * FROM cats;
+                    WITH RECURSIVE
+                        childCats AS (
+                            SELECT root.*
+                            FROM categories.categorization AS root
+                            WHERE root.category_id = :categoryId
+                    
+                            UNION ALL
+                    
+                            SELECT c.*
+                            FROM categories.categorization AS c, childCats
+                            WHERE childCats.right_categorization_id = c.id OR childCats.left_categorization_id = c.id
+                        )
+                    SELECT DISTINCT * FROM childCats;
                     """,
             nativeQuery = true
     )

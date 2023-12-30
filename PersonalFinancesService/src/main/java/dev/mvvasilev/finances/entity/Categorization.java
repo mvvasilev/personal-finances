@@ -24,17 +24,17 @@ public class Categorization extends AbstractEntity implements UserOwned {
 
     private String stringValue;
 
-    private double numericGreaterThan;
+    private Double numericGreaterThan;
 
-    private double numericLessThan;
+    private Double numericLessThan;
 
-    private double numericValue;
+    private Double numericValue;
 
     private LocalDateTime timestampGreaterThan;
 
     private LocalDateTime timestampLessThan;
 
-    private boolean booleanValue;
+    private Boolean BooleanValue;
 
     private Long categoryId;
 
@@ -78,27 +78,27 @@ public class Categorization extends AbstractEntity implements UserOwned {
         this.stringValue = stringValue;
     }
 
-    public double getNumericGreaterThan() {
+    public Double getNumericGreaterThan() {
         return numericGreaterThan;
     }
 
-    public void setNumericGreaterThan(double numericGreaterThan) {
+    public void setNumericGreaterThan(Double numericGreaterThan) {
         this.numericGreaterThan = numericGreaterThan;
     }
 
-    public double getNumericLessThan() {
+    public Double getNumericLessThan() {
         return numericLessThan;
     }
 
-    public void setNumericLessThan(double numericLessThan) {
+    public void setNumericLessThan(Double numericLessThan) {
         this.numericLessThan = numericLessThan;
     }
 
-    public double getNumericValue() {
+    public Double getNumericValue() {
         return numericValue;
     }
 
-    public void setNumericValue(double numericValue) {
+    public void setNumericValue(Double numericValue) {
         this.numericValue = numericValue;
     }
 
@@ -118,12 +118,12 @@ public class Categorization extends AbstractEntity implements UserOwned {
         this.timestampLessThan = timestampLessThan;
     }
 
-    public boolean getBooleanValue() {
-        return booleanValue;
+    public Boolean getBooleanValue() {
+        return BooleanValue;
     }
 
-    public void setBooleanValue(boolean booleanValue) {
-        this.booleanValue = booleanValue;
+    public void setBooleanValue(Boolean BooleanValue) {
+        this.BooleanValue = BooleanValue;
     }
 
     public Long getCategoryId() {

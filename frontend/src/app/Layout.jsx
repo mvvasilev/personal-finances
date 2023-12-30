@@ -18,6 +18,11 @@ import {Logout as LogoutIcon} from '@mui/icons-material';
 import {Login as LoginIcon} from "@mui/icons-material";
 import {Toaster} from 'react-hot-toast';
 import theme from '../components/ThemeRegistry/theme';
+import utils from "@/utils.js";
+import {CircularProgress} from "@mui/material";
+import {useEffect, useState} from "react";
+import {LocalizationProvider} from "@mui/x-date-pickers";
+import {AdapterDayjs} from "@mui/x-date-pickers/AdapterDayjs";
 
 const DRAWER_WIDTH = 240;
 
@@ -49,9 +54,37 @@ function isLoggedIn() {
 }
 
 export default function RootLayout({children}) {
+
+    const [spinner, showSpinner] = useState(false);
+
+    useEffect(() => {
+        window.addEventListener("onSpinnerStatusChange", () => {
+            showSpinner(utils.isSpinnerShown());
+        })
+    }, []);
+
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline/>
+
+            {
+                <Backdrop
+                    sx={{
+                        color: '#fff',
+                        zIndex: 2147483647
+                    }}
+                    open={spinner}
+                >
+                    <CircularProgress
+                        sx={{
+                            position: "absolute",
+                            zIndex: 2147483647,
+                            top: "50%",
+                            left: "50%"
+                        }}
+                    />
+                </Backdrop>
+            }
 
             <Drawer
                 sx={{
@@ -109,20 +142,22 @@ export default function RootLayout({children}) {
                     </form>}
                 </List>
             </Drawer>
-            <Box
-                component="main"
-                sx={{
-                    position: "absolute",
-                    top: 0,
-                    flexGrow: 1,
-                    bgcolor: 'background.default',
-                    left: `${DRAWER_WIDTH}px`,
-                    right: 0,
-                    p: 3,
-                }}
-            >
-                {children}
-            </Box>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <Box
+                    component="main"
+                    sx={{
+                        position: "absolute",
+                        top: 0,
+                        flexGrow: 1,
+                        bgcolor: 'background.default',
+                        left: `${DRAWER_WIDTH}px`,
+                        right: 0,
+                        p: 3,
+                    }}
+                >
+                    {children}
+                </Box>
+            </LocalizationProvider>
 
             <Toaster
                 toastOptions={{

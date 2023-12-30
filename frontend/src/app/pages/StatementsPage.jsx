@@ -9,6 +9,7 @@ import {Stack} from "@mui/material";
 import StatementCard from "@/components/statements/StatementCard.jsx";
 import Carousel from "react-material-ui-carousel";
 import StatementMappingEditor from "@/components/statements/StatementMappingEditor.jsx";
+import Divider from "@mui/material/Divider";
 
 
 export default function StatementsPage() {
@@ -22,9 +23,15 @@ export default function StatementsPage() {
     }, []);
 
     function fetchStatements() {
+        utils.showSpinner();
+
         utils.performRequest("/api/statements")
             .then(resp => resp.json())
-            .then(({ result }) => setStatements(result));
+            .then(({ result }) => {
+                setStatements(result);
+
+                utils.hideSpinner();
+            });
     }
 
     async function uploadStatement({ target }) {
@@ -33,11 +40,13 @@ export default function StatementsPage() {
         let formData = new FormData();
         formData.append("file", file);
 
+        utils.showSpinner();
+
         await toast.promise(
             utils.performRequest("/api/statements/uploadSheet", {
-                method: "POST",
-                body: formData
-            }),
+                    method: "POST",
+                    body: formData
+                }),
             {
                 loading: "Uploading...",
                 success: () => {
@@ -45,7 +54,11 @@ export default function StatementsPage() {
 
                     return "Upload successful!";
                 },
-                error: (err) => `Uh oh, something went wrong: ${err}`
+                error: (err) => {
+                    utils.hideSpinner();
+
+                    return `Uh oh, something went wrong: ${err}`;
+                }
             }
         );
     }
@@ -136,6 +149,10 @@ export default function StatementsPage() {
                                 {createCarouselItems()}
                             </Carousel>
                         }
+                    </Grid>
+
+                    <Grid xs={12}>
+                        <Divider></Divider>
                     </Grid>
 
                     <Grid xs={12}>

@@ -3,7 +3,7 @@ import Grid from '@mui/material/Unstable_Grid2';
 import MediaCard from '@/components/MediaCard';
 import { Stack } from '@mui/material';
 
-export default function HomePage() {
+export default function StatisticsPage() {
   return (
     <Stack>
       <div>

@@ -1,0 +1,1 @@
+ALTER TABLE categories.transaction_category ADD COLUMN IF NOT EXISTS rule_behavior VARCHAR(255);

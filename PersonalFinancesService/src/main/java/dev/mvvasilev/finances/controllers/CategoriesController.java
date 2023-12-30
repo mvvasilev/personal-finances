@@ -4,6 +4,7 @@ import dev.mvvasilev.common.controller.AbstractRestController;
 import dev.mvvasilev.common.web.APIResponseDTO;
 import dev.mvvasilev.common.web.CrudResponseDTO;
 import dev.mvvasilev.finances.dtos.*;
+import dev.mvvasilev.finances.enums.CategorizationRule;
 import dev.mvvasilev.finances.services.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.Collection;
 
 @RestController
@@ -22,6 +24,16 @@ public class CategoriesController extends AbstractRestController {
     @Autowired
     public CategoriesController(CategoryService categoryService) {
         this.categoryService = categoryService;
+    }
+
+    @GetMapping("/rules")
+    public ResponseEntity<APIResponseDTO<Collection<CategorizationRuleDTO>>> fetchCategorizationRules() {
+        return ok(
+                Arrays.stream(CategorizationRule.values()).map(r -> new CategorizationRuleDTO(
+                        r,
+                        r.applicableForType()
+                )).toList()
+        );
     }
 
     @PostMapping
@@ -60,11 +72,12 @@ public class CategoriesController extends AbstractRestController {
 
     @PostMapping("/{categoryId}/rules")
     @PreAuthorize("@authService.isOwner(#categoryId, T(dev.mvvasilev.finances.entity.TransactionCategory))")
-    public ResponseEntity<APIResponseDTO<Collection<CrudResponseDTO>>> createCategorizationRule(
+    public ResponseEntity<APIResponseDTO<Collection<CrudResponseDTO>>> createCategorizationRules(
             @PathVariable("categoryId") Long categoryId,
-            @RequestBody Collection<CreateCategorizationDTO> dto
+            @RequestBody Collection<CreateCategorizationDTO> dto,
+            Authentication authentication
     ) {
-        return created(categoryService.createCategorizationRules(categoryId, dto));
+        return created(categoryService.createCategorizationRules(categoryId, Integer.parseInt(authentication.getName()), dto));
     }
 
 //    @DeleteMapping("/{categoryId}/rules/{ruleId}")

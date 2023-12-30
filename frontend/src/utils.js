@@ -1,8 +1,10 @@
+import { v4 } from 'uuid';
+
 let utils = {
     performRequest: async (url, options) => {
         return await fetch(url, options).then(resp => {
             if (resp.status === 401) {
-                window.location.replace("https://localhost:8080/oauth2/authorization/authentik")
+                window.location.replace(`${window.location.origin}/oauth2/authorization/authentik`)
 
                 throw "Unauthorized, please login.";
             }
@@ -14,8 +16,23 @@ let utils = {
             return resp;
         });
     },
+    isSpinnerShown: () => {
+        return localStorage.getItem("SpinnerShowing") === "true";
+    },
+    showSpinner: () => {
+        localStorage.setItem("SpinnerShowing", "true");
+        window.dispatchEvent(new Event("onSpinnerStatusChange"));
+    },
+    hideSpinner: () => {
+        localStorage.removeItem("SpinnerShowing");
+        window.dispatchEvent(new Event("onSpinnerStatusChange"));
+    },
     toPascalCase: (s) => {
         return s.replace(/(\w)(\w*)/g, (g0,g1,g2) => g1.toUpperCase() + g2.toLowerCase());
+    },
+    generateUUID: () => v4(),
+    isNumeric: (value) => {
+        return /^-?\d+(\.\d+)?$/.test(value);
     }
 }
 

@@ -3,6 +3,7 @@ import {Stack} from "@mui/material";
 import {useEffect, useState} from "react";
 import {DataGrid} from "@mui/x-data-grid";
 import utils from "@/utils.js";
+import {ArrowDownward, ArrowUpward, PriceChange} from "@mui/icons-material";
 
 const COLUMNS = [
     {
@@ -12,6 +13,19 @@ const COLUMNS = [
         width: 150,
         sortable: false,
         filterable: false,
+        renderCell: (params) => {
+            return params.value ? (
+                <>
+                    <PriceChange style={{ color: '#4d4' }} />
+                    <ArrowUpward style={{ color: '#4d4' }} />
+                </>
+            ) : (
+                <>
+                    <PriceChange style={{ color: '#d44' }} />
+                    <ArrowDownward style={{ color: '#d44' }} />
+                </>
+            );
+        }
     },
     {
         field: "amount",
@@ -21,7 +35,7 @@ const COLUMNS = [
         flex: true,
         sortable: true,
         filterable: false,
-        valueFormatter: val => `${val.value} лв.`
+        valueFormatter: val => `${(val.value).toLocaleString(undefined, { minimumFractionDigits: 2 })} лв.`
     },
     {
         field: "description",
@@ -40,7 +54,7 @@ const COLUMNS = [
         flex: true,
         sortable: true,
         filterable: false,
-        valueFormatter: val => new Date(val.value).toLocaleString('en-UK')
+        valueFormatter: val => new Date(val.value).toLocaleString("bg-BG")
     },
 ];
 
@@ -48,7 +62,7 @@ export default function TransactionsPage() {
 
     const [pageOptions, setPageOptions] = useState({
         page: 0,
-        pageSize: 100,
+        pageSize: 50,
     });
 
     const [sortOptions, setSortOptions] = useState([
@@ -61,6 +75,8 @@ export default function TransactionsPage() {
     const [transactions, setTransactions] = useState({});
 
     useEffect(() => {
+        utils.showSpinner();
+
         // Multi-sorting requires the MUI data grid pro license :)
         let sortBy = sortOptions.map((sort) => `&sort=${sort.field},${sort.sort}`).join("")
 
@@ -68,17 +84,34 @@ export default function TransactionsPage() {
 
         utils.performRequest(`/api/processed-transactions?page=${pageOptions.page}&size=${pageOptions.pageSize}${sortBy}`)
             .then(resp => resp.json())
-            .then(({result}) => setTransactions(result));
+            .then(({result}) => {
+                setTransactions(result);
+                utils.hideSpinner();
+            });
     }, [pageOptions, sortOptions]);
 
     return (
-        <Stack>
-            <Grid container columnSpacing={1}>
-                <Grid xs={12} lg={12}>
+        <Stack
+        >
+            <Grid
+                container
+                columnSpacing={1}
+            >
+                <Grid
+                    sx={{
+                        height: "1200px"
+                    }}
+                    xs={12}
+                    lg={12}
+                >
                     <DataGrid
+                        sx={{
+                            overflowY: "scroll"
+                        }}
                         columns={COLUMNS}
                         rows={transactions.content ?? []}
                         rowCount={transactions.totalElements ?? 0}
+                        pageSizeOptions={[25, 50, 100]}
                         paginationMode={"server"}
                         sortingMode={"server"}
                         paginationModel={pageOptions}

@@ -11,6 +11,7 @@ import {useEffect, useState} from "react";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import toast from "react-hot-toast";
+import Typography from "@mui/material/Typography";
 
 const FIELD_TYPES = [
     "STRING",
@@ -56,6 +57,8 @@ export default function StatementMappingEditor({statementId}) {
     const [existingMappings, setExistingMappings] = useState([]);
 
     useEffect(() => {
+        utils.showSpinner();
+
         let supportedConversionsPromise = utils.performRequest("/api/statements/supported-conversions")
             .then(resp => resp.json())
             .then(({result}) => setSupportedConversions(result));
@@ -73,7 +76,8 @@ export default function StatementMappingEditor({statementId}) {
             .then(({result}) => setFields(result));
 
         toast.promise(
-            Promise.all([supportedConversionsPromise, valueGroupsPromise, existingMappingsPromise, fieldsPromise]),
+            Promise.all([supportedConversionsPromise, valueGroupsPromise, existingMappingsPromise, fieldsPromise])
+                .then(r => utils.hideSpinner()),
             {
                 loading: "Preparing...",
                 success: "Ready",
@@ -217,7 +221,7 @@ export default function StatementMappingEditor({statementId}) {
                         <Input
                             onChange={(e) => onChangeStringToBooleanTrueValue(e, mapping)}
                             value={mapping.conversion.selected.trueBranchStringValue}
-                        /> = true, else false
+                        /><Typography display={"inline"}>= true, else false</Typography>
                     </Box>
                 )
             default: return (<p>Unsupported</p>)
@@ -260,16 +264,24 @@ export default function StatementMappingEditor({statementId}) {
                     <Table>
                         <TableHead>
                             <TableRow>
-                                <TableCell style={{width: "300px"}} align="left" >Statement Column</TableCell>
-                                <TableCell align="left">Conversion</TableCell>
-                                <TableCell style={{width: "300px"}} align="left">Transaction Field</TableCell>
+                                <TableCell style={{width: "300px"}} align="left" >
+                                    <Typography fontSize={"1.25em"}>Statement Column</Typography>
+                                </TableCell>
+                                <TableCell align="left">
+                                    <Typography fontSize={"1.25em"}>Conversion</Typography>
+                                </TableCell>
+                                <TableCell style={{width: "300px"}} align="left">
+                                    <Typography fontSize={"1.25em"}>Transaction Field</Typography>
+                                </TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {
                                 mappings.map(m => (
                                     <TableRow key={m.valueGroup.id}>
-                                        <TableCell>{m.valueGroup.name}</TableCell>
+                                        <TableCell>
+                                            <Typography>{m.valueGroup.name}</Typography>
+                                        </TableCell>
                                         <TableCell>
                                             <Grid columnSpacing={1} container>
                                                 <Grid xs={2} lg={2}>
