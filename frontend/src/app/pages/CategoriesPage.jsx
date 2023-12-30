@@ -11,14 +11,12 @@ import Grid from "@mui/material/Unstable_Grid2";
 import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
 import {
-    Chip,
     Dialog,
     DialogActions,
     DialogContent,
     DialogContentText,
     DialogTitle,
     Modal,
-    Stack,
     TextField
 } from "@mui/material";
 import Box from "@mui/material/Box";
@@ -188,39 +186,6 @@ export default function CategoriesPage() {
                     }}
                     showDelete
                 />
-                {/*<Stack*/}
-                {/*    sx={{*/}
-                {/*        overflowY: "scroll"*/}
-                {/*    }}*/}
-                {/*    minHeight={"100px"}*/}
-                {/*    maxHeight={"250px"}*/}
-                {/*    useFlexGap*/}
-                {/*    flexWrap="wrap"*/}
-                {/*    direction={"row"}*/}
-                {/*    spacing={1}*/}
-                {/*>*/}
-                {/*    {*/}
-                {/*        categories.map(c => {*/}
-                {/*            let variant = (selectedCategory?.id ?? -1) === c.id ? "filled" : "outlined";*/}
-
-                {/*            return (*/}
-                {/*                <Chip*/}
-                {/*                    key={c.id}*/}
-                {/*                    onClick={(e) => {*/}
-                {/*                        setSelectedCategory({...c});*/}
-                {/*                    }}*/}
-                {/*                    onDelete={() => {*/}
-                {/*                        setSelectedCategory(c);*/}
-                {/*                        openConfirmDeleteCategoryModal(true);*/}
-                {/*                    }}*/}
-                {/*                    label={c.name}*/}
-                {/*                    deleteIcon={<Delete/>}*/}
-                {/*                    variant={variant}*/}
-                {/*                />*/}
-                {/*            );*/}
-                {/*        })*/}
-                {/*    }*/}
-                {/*</Stack>*/}
             </Grid>
 
             <Grid xs={12} lg={12}>

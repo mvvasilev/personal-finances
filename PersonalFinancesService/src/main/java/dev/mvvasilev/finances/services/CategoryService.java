@@ -80,6 +80,8 @@ public class CategoryService {
         final var categorizations = categorizationRepository.fetchForUser(userId);
         final var transactions = processedTransactionRepository.fetchForUser(userId);
 
+        processedTransactionCategoryRepository.deleteAllForTransactions(transactions.stream().map(AbstractEntity::getId).toList());
+
         // Run each category's rules for all transactions in parallel to eachother
         final var futures = categorizations.stream()
                 .collect(Collectors.groupingBy(Categorization::getCategoryId, HashMap::new, Collectors.toList()))

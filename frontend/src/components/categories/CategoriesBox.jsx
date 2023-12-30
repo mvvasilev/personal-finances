@@ -12,6 +12,8 @@ export default function CategoriesBox({
     minHeight: minHeight = "100px",
     maxHeight: maxHeight = "250px",
 }) {
+    let areChipsDeletable = onCategoryDelete !== undefined;
+
     return (
         <Stack
             sx={{
@@ -28,12 +30,11 @@ export default function CategoriesBox({
             {
                 categories.map(c => {
                     let variant = selectable && (selected?.id ?? -1) === c.id ? "filled" : "outlined";
-                    let isDeletable = onCategoryDelete !== undefined;
 
                     return (
                         <>
                             {
-                                isDeletable &&
+                                areChipsDeletable &&
                                 <Chip
                                     key={c.id}
                                     onClick={(e) => onCategorySelect(e, c)}
@@ -44,7 +45,7 @@ export default function CategoriesBox({
                                 />
                             }
                             {
-                                !isDeletable &&
+                                !areChipsDeletable &&
                                 <Chip
                                     key={c.id}
                                     onClick={(e) => onCategorySelect(e, c)}
