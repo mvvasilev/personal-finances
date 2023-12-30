@@ -1,8 +1,10 @@
 package dev.mvvasilev.finances.services;
 
 import dev.mvvasilev.finances.dtos.ProcessedTransactionDTO;
+import dev.mvvasilev.finances.dtos.TransactionCategoryDTO;
 import dev.mvvasilev.finances.entity.ProcessedTransaction;
 import dev.mvvasilev.finances.persistence.ProcessedTransactionRepository;
+import dev.mvvasilev.finances.persistence.TransactionCategoryRepository;
 import org.apache.commons.compress.utils.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
@@ -15,9 +17,12 @@ public class ProcessedTransactionService {
 
     final private ProcessedTransactionRepository processedTransactionRepository;
 
+    final private TransactionCategoryRepository transactionCategoryRepository;
+
     @Autowired
-    public ProcessedTransactionService(ProcessedTransactionRepository processedTransactionRepository) {
+    public ProcessedTransactionService(ProcessedTransactionRepository processedTransactionRepository, TransactionCategoryRepository transactionCategoryRepository) {
         this.processedTransactionRepository = processedTransactionRepository;
+        this.transactionCategoryRepository = transactionCategoryRepository;
     }
 
     public Page<ProcessedTransactionDTO> fetchPagedProcessedTransactionsForUser(int userId, final Pageable pageable) {
@@ -28,7 +33,9 @@ public class ProcessedTransactionService {
                         t.isInflow(),
                         t.getTimestamp(),
                         t.getDescription(),
-                        Lists.newArrayList() // TODO: Fetch categories. Do it all in SQL for better performance.
+                        transactionCategoryRepository.fetchCategoriesForTransaction(t.getId())
+                                .stream().map(ptc -> new TransactionCategoryDTO(ptc.getId(), ptc.getName()))
+                                .toList()
                 ));
     }
 }

@@ -4,6 +4,7 @@ import {useEffect, useState} from "react";
 import {DataGrid} from "@mui/x-data-grid";
 import utils from "@/utils.js";
 import {ArrowDownward, ArrowUpward, PriceChange} from "@mui/icons-material";
+import CategoriesBox from "@/components/categories/CategoriesBox.jsx";
 
 const COLUMNS = [
     {
@@ -56,6 +57,23 @@ const COLUMNS = [
         filterable: false,
         valueFormatter: val => new Date(val.value).toLocaleString("bg-BG")
     },
+    {
+        field: "categories",
+        headerName: "Categories",
+        maxWidth: 300,
+        flex: true,
+        sortable: false,
+        filterable: false,
+        renderCell: (params) => {
+            return (
+                <CategoriesBox
+                    categories={params.value}
+                    minHeight={0}
+                    selectable={false}
+                />
+            );
+        }
+    }
 ];
 
 export default function TransactionsPage() {
@@ -99,7 +117,7 @@ export default function TransactionsPage() {
             >
                 <Grid
                     sx={{
-                        height: "1200px"
+                        height: "95vh"
                     }}
                     xs={12}
                     lg={12}

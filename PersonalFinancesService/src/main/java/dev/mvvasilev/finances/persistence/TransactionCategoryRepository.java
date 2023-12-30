@@ -28,4 +28,14 @@ public interface TransactionCategoryRepository extends JpaRepository<Transaction
             @Param("name") String name,
             @Param("ruleBehavior") CategorizationRuleBehavior ruleBehavior
     );
+
+    @Query(value = """
+                   SELECT tc.*
+                   FROM categories.processed_transaction_category AS ptc
+                   JOIN categories.transaction_category AS tc ON tc.id = ptc.category_id
+                   WHERE ptc.processed_transaction_id = :transactionId
+                   """,
+            nativeQuery = true
+    )
+    Collection<TransactionCategory> fetchCategoriesForTransaction(@Param("transactionId") Long transactionId);
 }

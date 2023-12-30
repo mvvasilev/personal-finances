@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
@@ -119,6 +120,7 @@ public class StatementsService {
 
         // turn each cell in each row into a value, related to the value group ( column )
         for (var group : valueGroups) {
+            var groupType = group.getType();
             var valueList = new ArrayList<RawTransactionValue>();
 
             for (int y = 1; y < lastRowIndex; y++) {
@@ -127,14 +129,34 @@ public class StatementsService {
                 value.setGroupId(group.getId());
                 value.setRowIndex(y);
 
-                switch (group.getType()) {
-                    case STRING -> value.setStringValue(firstWorksheet.getRow(y).getCell(column).getStringCellValue());
-                    case NUMERIC ->
-                            value.setNumericValue(firstWorksheet.getRow(y).getCell(column).getNumericCellValue());
-                    case TIMESTAMP ->
-                            value.setTimestampValue(LocalDateTime.parse(firstWorksheet.getRow(y).getCell(column).getStringCellValue().trim(), DATE_FORMAT));
-                    case BOOLEAN ->
-                            value.setBooleanValue(firstWorksheet.getRow(y).getCell(column).getBooleanCellValue());
+                try {
+                    var cellValue = firstWorksheet.getRow(y).getCell(column).getStringCellValue().trim();
+
+                    try {
+                        switch (groupType) {
+                            case STRING -> value.setStringValue(cellValue);
+                            case NUMERIC -> value.setNumericValue(Double.parseDouble(cellValue));
+                            case TIMESTAMP -> value.setTimestampValue(LocalDateTime.parse(cellValue, DATE_FORMAT));
+                            case BOOLEAN -> value.setBooleanValue(Boolean.parseBoolean(cellValue));
+                        }
+                    } catch (Exception e) {
+                        switch (groupType) {
+                            case STRING -> value.setStringValue("");
+                            case NUMERIC -> value.setNumericValue(0.0);
+                            case TIMESTAMP -> value.setTimestampValue(LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.UTC));
+                            case BOOLEAN -> value.setBooleanValue(false);
+                        }
+                    }
+                } catch (IllegalStateException e) {
+                    // Cell was numeric
+                    var cellValue = firstWorksheet.getRow(y).getCell(column).getNumericCellValue();
+
+                    switch (groupType) {
+                        case STRING -> value.setStringValue(Double.toString(cellValue));
+                        case NUMERIC -> value.setNumericValue(cellValue);
+                        case TIMESTAMP -> value.setTimestampValue(LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.UTC));
+                        case BOOLEAN -> value.setBooleanValue(false);
+                    }
                 }
 
                 valueList.add(value);

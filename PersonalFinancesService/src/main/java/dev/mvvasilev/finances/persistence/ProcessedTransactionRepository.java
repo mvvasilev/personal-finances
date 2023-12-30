@@ -1,6 +1,9 @@
 package dev.mvvasilev.finances.persistence;
 
+import dev.mvvasilev.finances.dtos.TransactionCategoryDTO;
 import dev.mvvasilev.finances.entity.ProcessedTransaction;
+import dev.mvvasilev.finances.entity.ProcessedTransactionCategory;
+import dev.mvvasilev.finances.entity.TransactionCategory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

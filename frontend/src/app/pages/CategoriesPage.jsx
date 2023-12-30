@@ -1,6 +1,4 @@
-import {TreeItem, TreeView} from "@mui/x-tree-view";
 import {
-    Delete,
     Category as CategoryIcon,
     Add as AddIcon,
     Close as CloseIcon,
@@ -25,6 +23,7 @@ import {
 } from "@mui/material";
 import Box from "@mui/material/Box";
 import CategorizationRulesEditor from "@/components/categories/CategorizationRulesEditor.jsx";
+import CategoriesBox from "@/components/categories/CategoriesBox.jsx";
 
 export default function CategoriesPage() {
 
@@ -176,39 +175,52 @@ export default function CategoriesPage() {
             </Grid>
 
             <Grid xs={12} lg={12}>
-                <Stack
-                    sx={{
-                        overflowY: "scroll"
-                    }}
+                <CategoriesBox
+                    categories={categories}
                     minHeight={"100px"}
                     maxHeight={"250px"}
-                    useFlexGap
-                    flexWrap="wrap"
-                    direction={"row"}
-                    spacing={1}
-                >
-                    {
-                        categories.map(c => {
-                            let variant = (selectedCategory?.id ?? -1) === c.id ? "filled" : "outlined";
+                    selectable
+                    selected={selectedCategory}
+                    onCategorySelect={(e, c) => setSelectedCategory({...c})}
+                    onCategoryDelete={(e, c) => {
+                        setSelectedCategory(c);
+                        openConfirmDeleteCategoryModal(true);
+                    }}
+                    showDelete
+                />
+                {/*<Stack*/}
+                {/*    sx={{*/}
+                {/*        overflowY: "scroll"*/}
+                {/*    }}*/}
+                {/*    minHeight={"100px"}*/}
+                {/*    maxHeight={"250px"}*/}
+                {/*    useFlexGap*/}
+                {/*    flexWrap="wrap"*/}
+                {/*    direction={"row"}*/}
+                {/*    spacing={1}*/}
+                {/*>*/}
+                {/*    {*/}
+                {/*        categories.map(c => {*/}
+                {/*            let variant = (selectedCategory?.id ?? -1) === c.id ? "filled" : "outlined";*/}
 
-                            return (
-                                <Chip
-                                    key={c.id}
-                                    onClick={(e) => {
-                                        setSelectedCategory({...c});
-                                    }}
-                                    onDelete={() => {
-                                        setSelectedCategory(c);
-                                        openConfirmDeleteCategoryModal(true);
-                                    }}
-                                    label={c.name}
-                                    deleteIcon={<Delete/>}
-                                    variant={variant}
-                                />
-                            );
-                        })
-                    }
-                </Stack>
+                {/*            return (*/}
+                {/*                <Chip*/}
+                {/*                    key={c.id}*/}
+                {/*                    onClick={(e) => {*/}
+                {/*                        setSelectedCategory({...c});*/}
+                {/*                    }}*/}
+                {/*                    onDelete={() => {*/}
+                {/*                        setSelectedCategory(c);*/}
+                {/*                        openConfirmDeleteCategoryModal(true);*/}
+                {/*                    }}*/}
+                {/*                    label={c.name}*/}
+                {/*                    deleteIcon={<Delete/>}*/}
+                {/*                    variant={variant}*/}
+                {/*                />*/}
+                {/*            );*/}
+                {/*        })*/}
+                {/*    }*/}
+                {/*</Stack>*/}
             </Grid>
 
             <Grid xs={12} lg={12}>
