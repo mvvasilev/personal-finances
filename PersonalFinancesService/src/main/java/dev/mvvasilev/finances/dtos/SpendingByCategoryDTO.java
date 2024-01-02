@@ -1,11 +1,11 @@
 package dev.mvvasilev.finances.dtos;
 
-import java.util.Collection;
-import java.util.Map;
+import java.time.LocalDateTime;
 
-public record SpendingByCategoryDTO(
-        Collection<CategoryDTO> categories,
+public record SpendingByCategoryDTO (
+    Long categoryId,
 
-        Map<Long, Double> spendingByCategory
-) {
-}
+    LocalDateTime timestamp,
+
+    Double amount
+) {}

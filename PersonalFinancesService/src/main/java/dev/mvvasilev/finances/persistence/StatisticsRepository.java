@@ -1,12 +1,18 @@
 package dev.mvvasilev.finances.persistence;
 
+import dev.mvvasilev.finances.dtos.SpendingOverTimeByCategoryDTO;
+import dev.mvvasilev.finances.enums.TimePeriod;
+import dev.mvvasilev.finances.persistence.dtos.SpendingOverTimeDTO;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import jakarta.persistence.Tuple;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -21,7 +27,7 @@ public class StatisticsRepository {
         this.entityManager = entityManager;
     }
 
-    public Map<Long, Double> fetchSpendingByCategory(LocalDateTime from, LocalDateTime to, List<Long> categoryIds) {
+    public Map<Long, Double> fetchSpendingByCategory(Long[] categoryId, LocalDateTime from, LocalDateTime to) {
         Query nativeQuery = entityManager.createNativeQuery(
                 """
                         SELECT ptc.category_id AS category_id, ROUND(CAST(SUM(pt.amount) AS NUMERIC), 2) AS total_spending
@@ -37,7 +43,7 @@ public class StatisticsRepository {
                 Tuple.class
         );
 
-        nativeQuery.setParameter(1, categoryIds);
+        nativeQuery.setParameter(1, categoryId);
         nativeQuery.setParameter(2, from);
         nativeQuery.setParameter(3, to);
 
@@ -46,5 +52,22 @@ public class StatisticsRepository {
                 (Tuple tuple) -> ((Number) tuple.get("category_id")).longValue(),
                 (Tuple tuple) -> ((Number) tuple.get("total_spending")).doubleValue()
         ));
+    }
+
+    public Collection<SpendingOverTimeDTO> fetchSpendingByCategoryOverTime(LocalDateTime from, LocalDateTime to, TimePeriod period, Long[] categoryId) {
+        Query nativeQuery = entityManager.createNativeQuery("SELECT * FROM statistics.spending_over_time(?1, ?2, ?3, ?4) ORDER BY period_beginning_timestamp;", Tuple.class);
+
+        nativeQuery.setParameter(1, categoryId);
+        nativeQuery.setParameter(2, period.toString());
+        nativeQuery.setParameter(3, from);
+        nativeQuery.setParameter(4, to);
+
+
+        //noinspection unchecked
+        return nativeQuery.getResultStream().map(r -> new SpendingOverTimeDTO(
+                ((Tuple) r).get("category_id", Long.class),
+                ((Tuple) r).get("amount_for_period", Double.class),
+                ((Tuple) r).get("period_beginning_timestamp", Timestamp.class).toLocalDateTime()
+        )).toList();
     }
 }

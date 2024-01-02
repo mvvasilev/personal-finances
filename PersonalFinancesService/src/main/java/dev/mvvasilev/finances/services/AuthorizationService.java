@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.Collection;
+
 @Service("authService")
 public class AuthorizationService {
 
@@ -47,6 +49,10 @@ public class AuthorizationService {
 
         // If no results were returned, then the user was not the owner of the resource
         return !entityManager.createQuery(finalQuery).setMaxResults(1).getResultList().isEmpty();
+    }
+
+    public boolean isOwner(Collection<Long> ids, Class<?> userOwnedEntity) {
+        return ids.stream().allMatch(id -> isOwner(id, userOwnedEntity));
     }
 
 }
