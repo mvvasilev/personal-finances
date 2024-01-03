@@ -5,5 +5,6 @@ export const PARAMS = {
     IS_FROM_DATE_STATIC: "isFromDateStatic",
     IS_TO_NOW: "isToDateToNow",
     TIME_PERIOD: "timePeriod",
-    CATEGORY_PREFIX: "category"
+    CATEGORY_PREFIX: "category",
+    INCLUDE_UNCATEGORIZED: "includeUncategorized"
 }

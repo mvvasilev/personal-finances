@@ -51,6 +51,15 @@ public class WidgetService {
 
         widgetRepository.saveAndFlush(mapWidget(widget.get(), widget.get().getUserId(), dto));
 
+        widgetParameterRepository.deleteAllByWidgetId(id);
+
+        final var params = dto.parameters()
+                .stream()
+                .map(p -> mapWidgetParameter(new WidgetParameter(), id, p))
+                .toList();
+
+        widgetParameterRepository.saveAllAndFlush(params);
+
         return 1; // TODO: fetch rows affected from database
     }
 

@@ -29,17 +29,17 @@ public class StatisticsRepository {
 
     public Map<Long, Double> fetchSpendingByCategory(Long[] categoryId, LocalDateTime from, LocalDateTime to) {
         Query nativeQuery = entityManager.createNativeQuery(
-                """
-                        SELECT ptc.category_id AS category_id, ROUND(CAST(SUM(pt.amount) AS NUMERIC), 2) AS total_spending
-                        FROM transactions.processed_transaction AS pt
-                        JOIN categories.processed_transaction_category AS ptc ON ptc.processed_transaction_id = pt.id
-                        WHERE
-                                pt.is_inflow = FALSE
-                            AND ptc.category_id = any(?1)
-                            AND (pt.timestamp BETWEEN ?2 AND ?3)
-                        GROUP BY ptc.category_id
-                        ORDER BY total_spending DESC;
-                        """,
+        """
+                SELECT ptc.category_id AS category_id, ROUND(CAST(SUM(pt.amount) AS NUMERIC), 2) AS total_spending
+                FROM transactions.processed_transaction AS pt
+                JOIN categories.processed_transaction_category AS ptc ON ptc.processed_transaction_id = pt.id
+                WHERE
+                        pt.is_inflow = FALSE
+                    AND ptc.category_id = any(?1)
+                    AND (pt.timestamp BETWEEN ?2 AND ?3)
+                GROUP BY ptc.category_id
+                ORDER BY total_spending DESC;
+                """,
                 Tuple.class
         );
 
@@ -69,5 +69,24 @@ public class StatisticsRepository {
                 ((Tuple) r).get("amount_for_period", Double.class),
                 ((Tuple) r).get("period_beginning_timestamp", Timestamp.class).toLocalDateTime()
         )).toList();
+    }
+
+    public Double sumByCategory(Long[] categoryId, LocalDateTime from, LocalDateTime to, Boolean includeUncategorized) {
+        Query nativeQuery = entityManager.createNativeQuery(
+               """
+               SELECT SUM(pt.amount) AS result
+               FROM transactions.processed_transaction AS pt
+               LEFT OUTER JOIN categories.processed_transaction_category AS ptc ON pt.id = ptc.processed_transaction_id
+               WHERE (ptc.category_id = any(?1) OR (?4 AND ptc.category_id IS NULL)) AND (pt.timestamp BETWEEN ?2 AND ?3)
+               """,
+                Tuple.class
+        );
+
+        nativeQuery.setParameter(1, categoryId);
+        nativeQuery.setParameter(2, from);
+        nativeQuery.setParameter(3, to);
+        nativeQuery.setParameter(4, includeUncategorized);
+
+        return ((Tuple) nativeQuery.getSingleResult()).get("result", Double.class);
     }
 }

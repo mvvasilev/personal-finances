@@ -11,6 +11,7 @@ import Grid from "@mui/material/Unstable_Grid2";
 import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
 import {
+    Backdrop,
     Checkbox,
     Dialog,
     DialogActions,
@@ -26,6 +27,8 @@ import CategoriesBox from "@/components/categories/CategoriesBox.jsx";
 import {PARAMS} from "@/components/widgets/WidgetParameters.js";
 import * as React from "react";
 import VisuallyHiddenInput from "@/components/VisuallyHiddenInput.jsx";
+import Card from "@mui/material/Card";
+import Typography from "@mui/material/Typography";
 
 export default function CategoriesPage() {
 
@@ -220,80 +223,177 @@ export default function CategoriesPage() {
     }
 
     return (
-        <Grid container spacing={1}>
+        <div>
+            <Grid container spacing={1}>
 
-            <Grid container xs={12} lg={12}>
-                <Grid xs={1} lg={1}>
-                    <Button sx={{ width:"100%" }} variant="contained" startIcon={<AddIcon />} onClick={() => openCategoryModal(true)}>
-                        Add Category
-                    </Button>
+                <Grid container xs={12} lg={12}>
+                    <Grid xs={1} lg={1}>
+                        <Button sx={{ width:"100%" }} variant="contained" startIcon={<AddIcon />} onClick={() => openCategoryModal(true)}>
+                            Add Category
+                        </Button>
+                    </Grid>
+                    <Grid xs={1} lg={1}>
+                        <Button sx={{ width:"100%" }} variant="outlined" startIcon={<CategoryIcon />} onClick={() => openApplyRulesConfirmModal(true)}>
+                            Apply Rules
+                        </Button>
+                    </Grid>
+                    <Grid xs={1} lg={1}>
+                        <Button sx={{ width:"100%" }} variant="outlined" startIcon={<Download />} onClick={() => downloadCategories()}>
+                            Export
+                        </Button>
+                    </Grid>
+                    <Grid xs={1} lg={1}>
+                        <Button sx={{ width:"100%" }} variant="outlined" startIcon={<Upload />} onClick={() => openUploadDialog(true)}>
+                            Import
+                        </Button>
+                    </Grid>
+                    <Grid xs={8} lg={8}></Grid>
                 </Grid>
-                <Grid xs={1} lg={1}>
-                    <Button sx={{ width:"100%" }} variant="outlined" startIcon={<CategoryIcon />} onClick={() => openApplyRulesConfirmModal(true)}>
-                        Apply Rules
-                    </Button>
-                </Grid>
-                <Grid xs={1} lg={1}>
-                    <Button sx={{ width:"100%" }} variant="outlined" startIcon={<Download />} onClick={() => downloadCategories()}>
-                        Export
-                    </Button>
-                </Grid>
-                <Grid xs={1} lg={1}>
-                    <Button sx={{ width:"100%" }} variant="outlined" startIcon={<Upload />} onClick={() => openUploadDialog(true)}>
-                        Import
-                    </Button>
-                </Grid>
-                <Grid xs={8} lg={8}></Grid>
-            </Grid>
 
-            <Grid xs={12} lg={12}>
-                <CategoriesBox
-                    categories={categories}
-                    minHeight={"100px"}
-                    maxHeight={"250px"}
-                    selectable
-                    selected={selectedCategory}
-                    onCategorySelect={(e, c) => setSelectedCategory({...c})}
-                    onCategoryDelete={(e, c) => {
-                        setSelectedCategory(c);
-                        openConfirmDeleteCategoryModal(true);
-                    }}
-                    showDelete
-                />
-            </Grid>
-
-            <Grid xs={12} lg={12}>
-                <Divider></Divider>
-            </Grid>
-
-            <Grid xs={12} lg={12}>
-                {
-                    selectedCategory &&
-                    <CategorizationRulesEditor
-                        selectedCategory={selectedCategory}
-                        onRuleBehaviorSelect={(value) => {
-                            selectedCategory.ruleBehavior = value;
-                            setSelectedCategory({...selectedCategory});
+                <Grid xs={12} lg={12}>
+                    <CategoriesBox
+                        categories={categories}
+                        minHeight={"100px"}
+                        maxHeight={"250px"}
+                        selectable
+                        selected={selectedCategory}
+                        onCategorySelect={(e, c) => setSelectedCategory({...c})}
+                        onCategoryDelete={(e, c) => {
+                            setSelectedCategory(c);
+                            openConfirmDeleteCategoryModal(true);
                         }}
-                        onSave={() => saveCategory(selectedCategory)}
+                        showDelete
                     />
-                }
-            </Grid>
+                </Grid>
 
+                <Grid xs={12} lg={12}>
+                    <Divider></Divider>
+                </Grid>
+
+                <Grid xs={12} lg={12}>
+                    {
+                        selectedCategory &&
+                        <CategorizationRulesEditor
+                            selectedCategory={selectedCategory}
+                            onRuleBehaviorSelect={(value) => {
+                                selectedCategory.ruleBehavior = value;
+                                setSelectedCategory({...selectedCategory});
+                            }}
+                            onSave={() => saveCategory(selectedCategory)}
+                        />
+                    }
+                </Grid>
+                <Dialog
+                    open={showConfirmDeleteCategoryModal}
+                >
+                    <DialogTitle id="delete-category-dialog-title">
+                        {`Delete Category "${selectedCategory?.name}"?`}
+                    </DialogTitle>
+                    <DialogContent>
+                        <DialogContentText>
+                            Deleting a category will also clear it from all transactions it is currently applied to
+                        </DialogContentText>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button
+                            onClick={deleteSelectedCategory}
+                        >
+                            Delete
+                        </Button>
+                        <Button
+                            onClick={() => openConfirmDeleteCategoryModal(false)}
+                            autoFocus
+                            variant="contained"
+                        >
+                            Cancel
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+                <Dialog
+                    open={showApplyRulesConfirmModal}
+                >
+                    <DialogTitle id="apply-rules-dialog-title">
+                        {"Apply all categorization rules?"}
+                    </DialogTitle>
+                    <DialogContent>
+                        <DialogContentText>
+                            Applying all categorization rules to your current transactions will wipe all categories
+                            assigned to them, and re-assign them based on the rules as currently defined.
+                        </DialogContentText>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button
+                            onClick={applyCategorizationRules}
+                        >
+                            Apply
+                        </Button>
+                        <Button
+                            onClick={() => openApplyRulesConfirmModal(false)}
+                            autoFocus
+                            variant="contained"
+                        >
+                            Cancel
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+                <Dialog
+                    open={showUploadDialog}
+                >
+                    <DialogTitle id="upload-dialog-title">
+                        {"Replace Existing Categories?"}
+                    </DialogTitle>
+                    <DialogContent>
+                        <DialogContentText>
+                            Would you like to replace your existing categories completely with the ones in your import?
+                            ( Note that this will remove all current categories from your transactions )
+                        </DialogContentText>
+                        <FormControlLabel
+                            sx={{ width: "100%", height: "100%" }}
+                            value="end"
+                            control={
+                                <Checkbox
+                                    checked={replaceExistingOnUpload}
+                                    onChange={(e) => {
+                                        setReplaceExistingOnUpload(e.target.checked);
+                                    }}
+                                />
+                            }
+                            label="Replace Existing Categories"
+                            labelPlacement="end"
+                        />
+                    </DialogContent>
+                    <DialogActions>
+                        <Button
+                            component="label"
+                        >
+                            <VisuallyHiddenInput type="file" onChange={uploadCategories}/>
+                            Select File
+                        </Button>
+                        <Button
+                            onClick={() => openUploadDialog(false)}
+                            autoFocus
+                            variant="contained"
+                        >
+                            Cancel
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            </Grid>
             <Modal
-                sx={{
-                    position: "absolute",
-                    top: "50%",
-                    left: "50%",
-                    transform: 'translate(-50%, -50%)',
-                    width: 400,
-                    height: "fit-content",
-                    p: 4
-                }}
                 open={isCategoryModalOpen}
             >
-                <Box>
-                    <h3>Create New Category</h3>
+                <Card
+                    sx={{
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        transform: 'translate(-50%, -50%)',
+                        width: 400,
+                        height: "fit-content",
+                        p: 4
+                    }}
+                >
+                    <Typography sx={{ pb: 1, fontSize: "1.25em"}}>Create New Category</Typography>
                     <Divider></Divider>
                     <Grid container spacing={1}>
                         <Grid xs={12} lg={12}>
@@ -326,103 +426,8 @@ export default function CategoriesPage() {
                             </Button>
                         </Grid>
                     </Grid>
-                </Box>
+                </Card>
             </Modal>
-            <Dialog
-                open={showConfirmDeleteCategoryModal}
-            >
-                <DialogTitle id="delete-category-dialog-title">
-                    {`Delete Category "${selectedCategory?.name}"?`}
-                </DialogTitle>
-                <DialogContent>
-                    <DialogContentText>
-                        Deleting a category will also clear it from all transactions it is currently applied to
-                    </DialogContentText>
-                </DialogContent>
-                <DialogActions>
-                    <Button
-                        onClick={deleteSelectedCategory}
-                    >
-                        Delete
-                    </Button>
-                    <Button
-                        onClick={() => openConfirmDeleteCategoryModal(false)}
-                        autoFocus
-                        variant="contained"
-                    >
-                        Cancel
-                    </Button>
-                </DialogActions>
-            </Dialog>
-            <Dialog
-                open={showApplyRulesConfirmModal}
-            >
-                <DialogTitle id="apply-rules-dialog-title">
-                    {"Apply all categorization rules?"}
-                </DialogTitle>
-                <DialogContent>
-                    <DialogContentText>
-                        Applying all categorization rules to your current transactions will wipe all categories
-                        assigned to them, and re-assign them based on the rules as currently defined.
-                    </DialogContentText>
-                </DialogContent>
-                <DialogActions>
-                    <Button
-                        onClick={applyCategorizationRules}
-                    >
-                        Apply
-                    </Button>
-                    <Button
-                        onClick={() => openApplyRulesConfirmModal(false)}
-                        autoFocus
-                        variant="contained"
-                    >
-                        Cancel
-                    </Button>
-                </DialogActions>
-            </Dialog>
-            <Dialog
-                open={showUploadDialog}
-            >
-                <DialogTitle id="upload-dialog-title">
-                    {"Replace Existing Categories?"}
-                </DialogTitle>
-                <DialogContent>
-                    <DialogContentText>
-                        Would you like to replace your existing categories completely with the ones in your import?
-                        ( Note that this will remove all current categories from your transactions )
-                    </DialogContentText>
-                    <FormControlLabel
-                        sx={{ width: "100%", height: "100%" }}
-                        value="end"
-                        control={
-                            <Checkbox
-                                checked={replaceExistingOnUpload}
-                                onChange={(e) => {
-                                    setReplaceExistingOnUpload(e.target.checked);
-                                }}
-                            />
-                        }
-                        label="Replace Existing Categories"
-                        labelPlacement="end"
-                    />
-                </DialogContent>
-                <DialogActions>
-                    <Button
-                        component="label"
-                    >
-                        <VisuallyHiddenInput type="file" onChange={uploadCategories}/>
-                        Select File
-                    </Button>
-                    <Button
-                        onClick={() => openUploadDialog(false)}
-                        autoFocus
-                        variant="contained"
-                    >
-                        Cancel
-                    </Button>
-                </DialogActions>
-            </Dialog>
-        </Grid>
+        </div>
     );
 }

@@ -129,8 +129,30 @@ export default function StatisticsPage() {
         );
     }
 
-    function updateExistingWidget() {
+    async function updateExistingWidget(widget) {
+        utils.showSpinner();
+        openWidgetModal(false);
 
+        await utils.performRequest(`/api/widgets/${widget.dbId}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                positionX: widget.x,
+                positionY: widget.y,
+                sizeX: widget.w,
+                sizeY: widget.h,
+                name: widget.name,
+                type: widget.type,
+                parameters: widget.parameters
+            })
+        })
+            .then(resp => resp.json())
+            .then(r => fetchWidgets())
+            .then(resp => {
+                utils.hideSpinner();
+            });
     }
 
     function removeWidget() {

@@ -39,7 +39,8 @@ public class StatisticsController extends AbstractRestController {
     public ResponseEntity<APIResponseDTO<SpendingByCategoriesDTO>> fetchSpendingByCategory(
             Long[] categoryId,
             @RequestParam(defaultValue = "1970-01-01T00:00:00") LocalDateTime from,
-            @RequestParam(defaultValue = "2099-01-01T00:00:00") LocalDateTime to
+            @RequestParam(defaultValue = "2099-01-01T00:00:00") LocalDateTime to,
+            @RequestParam(defaultValue = "false") Boolean includeUncategorized
     ) {
         return ok(statisticsService.spendingByCategory(categoryId, from, to));
     }
@@ -50,9 +51,21 @@ public class StatisticsController extends AbstractRestController {
             Long[] categoryId,
             @RequestParam(defaultValue = "DAILY") TimePeriod period,
             @RequestParam(defaultValue = "1970-01-01T00:00:00") LocalDateTime from,
-            @RequestParam(defaultValue = "2099-01-01T00:00:00") LocalDateTime to
+            @RequestParam(defaultValue = "2099-01-01T00:00:00") LocalDateTime to,
+            @RequestParam(defaultValue = "false") Boolean includeUncategorized
     ) {
         return ok(statisticsService.spendingByCategoryOverTime(categoryId, period, from, to));
+    }
+
+    @GetMapping("/sumByCategory")
+    @PreAuthorize("@authService.isOwner(#categoryId, T(dev.mvvasilev.finances.entity.TransactionCategory))")
+    public ResponseEntity<APIResponseDTO<Double>> sum(
+            Long[] categoryId,
+            @RequestParam(defaultValue = "1970-01-01T00:00:00") LocalDateTime from,
+            @RequestParam(defaultValue = "2099-01-01T00:00:00") LocalDateTime to,
+            @RequestParam(defaultValue = "false") Boolean includeUncategorized
+    ) {
+        return ok(statisticsService.sumByCategory(categoryId, from, to, includeUncategorized));
     }
 
 }

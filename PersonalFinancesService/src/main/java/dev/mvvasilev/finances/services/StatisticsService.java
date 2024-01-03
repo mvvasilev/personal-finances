@@ -75,4 +75,8 @@ public class StatisticsService {
             case YEARLY -> ChronoUnit.YEARS.between(from, to) <= 30;
         };
     }
+
+    public Double sumByCategory(Long[] categoryId, LocalDateTime from, LocalDateTime to, Boolean includeUncategorized) {
+        return statisticsRepository.sumByCategory(categoryId, from, to, includeUncategorized);
+    }
 }

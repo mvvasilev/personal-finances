@@ -1,5 +1,10 @@
 import { v4 } from 'uuid';
 
+let LEV_FORMAT = new Intl.NumberFormat('bg-BG', {
+    style: 'currency',
+    currency: 'BGN',
+});
+
 let utils = {
     performRequest: async (url, options) => {
         return await fetch(url, options).then(resp => {
@@ -33,6 +38,9 @@ let utils = {
     generateUUID: () => v4(),
     isNumeric: (value) => {
         return /^-?\d+(\.\d+)?$/.test(value);
+    },
+    formatCurrency(number) {
+        return LEV_FORMAT.format(number);
     }
 }
 

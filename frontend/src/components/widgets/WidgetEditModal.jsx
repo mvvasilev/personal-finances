@@ -1,7 +1,17 @@
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import Grid from "@mui/material/Unstable_Grid2";
-import {Checkbox, FormControlLabel, MenuItem, Modal, OutlinedInput, Select, Slider, TextField} from "@mui/material";
+import {
+    Checkbox,
+    FormControlLabel,
+    Menu,
+    MenuItem,
+    Modal,
+    OutlinedInput,
+    Select,
+    Slider,
+    TextField
+} from "@mui/material";
 import Typography from "@mui/material/Typography";
 import utils from "@/utils.js";
 import {DatePicker} from "@mui/x-date-pickers";
@@ -11,6 +21,7 @@ import {Close as CloseIcon, Save as SaveIcon} from "@mui/icons-material";
 import * as React from "react";
 import {useEffect, useState} from "react";
 import { PARAMS } from "@/components/widgets/WidgetParameters.js";
+import Card from "@mui/material/Card";
 
 export default function WidgetEditModal(
     {
@@ -30,7 +41,10 @@ export default function WidgetEditModal(
     useEffect(() => {
         setWidget({
             ...initialWidget,
-            selectedCategories: initialWidget.parameters?.filter(p => p.name.includes("category")).map(p => p.numericValue) ?? []
+            parameters: initialWidget.parameters?.reduce((acc, item) => {
+                acc[item.name] = { ...item, name: undefined };
+                return acc;
+            }, {}) ?? {}
         });
     }, [initialWidget]);
 
@@ -48,56 +62,96 @@ export default function WidgetEditModal(
             .then(resp => setTimePeriods(resp.result));
     }, []);
 
+    useEffect(() => {
+        console.log(widget);
+    }, [widget]);
+
     function widgetParams(name, defaultValue) {
         if (!widget.parameters) {
-            widget.parameters = [];
+            widget.parameters = {};
         }
 
-        let val = widget.parameters?.find(p => p.name === name);
+        let val = widget.parameters[name];
 
         if (val) {
             return val;
         }
 
-        let newVal = {
-            name: name
-        };
+        let newVal = {};
 
         defaultValue(newVal);
 
-        widget.parameters.push(newVal);
+        widget.parameters[name] = newVal;
 
         setWidget({...widget});
 
         return newVal;
     }
 
+    function widgetParamsMultiselect(prefix, fetchValue) {
+        return Object.entries(widget.parameters)
+            .filter(([name, value]) => name.startsWith(prefix))
+            .map(([name, value]) => fetchValue(value));
+    }
+
     function setWidgetParam(name, setParam) {
-        var param = widget.parameters?.find(p => p.name === name);
+        var param = widget.parameters[name];
 
         if (!param) {
-            widget.parameters = [...widget.parameters];
-            widget.parameters.push({
-                name: name
-            });
-            param = widget.parameters?.find(p => p.name === name);
+            widget.parameters = {...widget.parameters};
+            widget.parameters[name] = {};
+            param = widget.parameters[name];
         }
 
         setParam(param);
         setWidget({...widget});
     }
 
+    function setWidgetParamsMultiselect(prefix, selected, setParam) {
+        // First, clear the current parameters of all elements with the prefix
+        // Then, re-insert the selected elements
+
+        widget.parameters = Object.entries(widget.parameters)
+            .filter(([name, value]) => !name.startsWith(prefix))
+            .reduce((acc, item) => {
+                acc[item.name] = { ...item, name: undefined };
+                return acc;
+            });
+
+        selected.forEach((value, i) => {
+            widget.parameters[`${prefix}-${i}`] = {};
+            setParam(widget.parameters[`${prefix}-${i}`], value);
+        })
+
+        setWidget({...widget});
+    }
+
     function mapWidget() {
-        widget.parameters = widget.parameters.concat(widget.selectedCategories?.map((c, i) => {
-            return {
-                name: `${PARAMS.CATEGORY_PREFIX}-${i}`,
-                numericValue: c
-            }
-        }));
+        // widget.parameters = widget.parameters.concat(widget.selectedCategories?.map((c, i) => {
+        //     return {
+        //         name: `${PARAMS.CATEGORY_PREFIX}-${i}`,
+        //         numericValue: c
+        //     }
+        // }));
 
-        widget.selectedCategories = undefined;
+        // widget.selectedCategories = undefined;
 
-        return {...widget}
+        return {
+            ...widget,
+            selectedCategories: undefined,
+            parameters: Object.entries(widget.parameters).map(([name, value]) => {
+                return {
+                    ...value,
+                    name: name
+                }
+            })
+            //     .concat(widget.selectedCategories?.map((c, i) => {
+            //     return {
+            //         name: `${PARAMS.CATEGORY_PREFIX}-${i}`,
+            //         numericValue: c
+            //     }
+            // }))
+        }
     }
 
     function onEditWidget() {
@@ -111,23 +165,24 @@ export default function WidgetEditModal(
     return (
         widget &&
         <Modal
-            sx={{
-                position: "absolute",
-                top: "50%",
-                left: "50%",
-                transform: 'translate(-50%, -50%)',
-                width: 400,
-                height: "fit-content",
-                p: 4
-            }}
             open={open}
         >
-            <Box>
+            <Card
+                sx={{
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    transform: 'translate(-50%, -50%)',
+                    width: 400,
+                    height: "fit-content",
+                    p: 4
+                }}
+            >
                 {
                     widget.dbId ? (
-                        <h3>Editing Widget</h3>
+                        <Typography sx={{ pb: 1, fontSize: "1.25em"}}>Editing Widget</Typography>
                     ) : (
-                        <h3>Create New Widget</h3>
+                        <Typography sx={{ pb: 1, fontSize: "1.25em"}}>Create New Widget</Typography>
                     )
                 }
                 <Divider></Divider>
@@ -249,7 +304,9 @@ export default function WidgetEditModal(
                         <Grid xs={12} lg={12}>
                             <Select
                                 id={"time-period-type"}
-                                sx={{ width: "100%" }}
+                                sx={{
+                                    width: "100%"
+                                }}
                                 value={widgetParams(PARAMS.TIME_PERIOD, val => val.stringValue = "placeholder")?.stringValue}
                                 onChange={(e) => {
                                     setWidgetParam(PARAMS.TIME_PERIOD, p => p.stringValue = e.target.value);
@@ -272,20 +329,34 @@ export default function WidgetEditModal(
                         </Grid>
                     }
                     <Grid xs={12} lg={12}>
+                        <FormControlLabel
+                            sx={{ width: "100%", height: "100%" }}
+                            value="end"
+                            control={
+                                <Checkbox
+                                    checked={widgetParams(PARAMS.INCLUDE_UNCATEGORIZED, val => val.booleanValue = false)?.booleanValue}
+                                    onChange={(e) => {
+                                        setWidgetParam(PARAMS.INCLUDE_UNCATEGORIZED, p => p.booleanValue = e.target.checked);
+                                    }}
+                                />
+                            }
+                            label="Include Uncategorized"
+                            labelPlacement="end"
+                        />
+                    </Grid>
+                    <Grid xs={12} lg={12}>
                         <Select
                             sx={{ width: "100%", height: "100%" }}
                             input={<OutlinedInput label="Categories" />}
                             multiple
-                            value={widget.selectedCategories ?? []}
+                            value={widgetParamsMultiselect(PARAMS.CATEGORY_PREFIX, (v) => v.numericValue) ?? []}
                             renderValue={(selected) => {
-                                console.log(selected)
                                 return (<Typography>
                                     { selected.map(s => categories.find(c => c.id === s)?.name)?.join(", ")}
                                 </Typography>)
                             }}
                             onChange={(e) => {
-                                widget.selectedCategories = e.target.value;
-                                setWidget({...widget});
+                                setWidgetParamsMultiselect(PARAMS.CATEGORY_PREFIX, e.target.value, (param, value) => param.numericValue = value);
                             }}
                         >
                             <MenuItem value="placeholder" disabled>
@@ -294,7 +365,7 @@ export default function WidgetEditModal(
                             {
                                 categories.map(c => (
                                     <MenuItem key={c.id} value={c.id}>
-                                        <Checkbox checked={widget.selectedCategories?.findIndex(cat => cat === c.id) > -1} />
+                                        <Checkbox checked={widgetParamsMultiselect(PARAMS.CATEGORY_PREFIX, (v) => v.numericValue)?.findIndex(cat => cat === c.id) > -1} />
                                         <Typography>{ c.name }</Typography>
                                     </MenuItem>
                                 ))
@@ -335,7 +406,7 @@ export default function WidgetEditModal(
                         </Button>
                     </Grid>
                 </Grid>
-            </Box>
+            </Card>
         </Modal>
     );
 }
