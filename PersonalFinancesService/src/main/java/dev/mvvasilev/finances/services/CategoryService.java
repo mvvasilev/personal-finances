@@ -391,7 +391,7 @@ public class CategoryService {
     private CreateCategorizationDTO mapCategorizationForImport(CategorizationDTO cr) {
         return new CreateCategorizationDTO (
                 cr.rule().rule(),
-                cr.ruleBasedOn().field(),
+                cr.ruleBasedOn() == null ? null : cr.ruleBasedOn().field(),
                 Optional.ofNullable(cr.stringValue()),
                 Optional.ofNullable(cr.numericGreaterThan()),
                 Optional.ofNullable(cr.numericLessThan()),

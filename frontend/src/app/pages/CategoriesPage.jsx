@@ -197,12 +197,15 @@ export default function CategoriesPage() {
 
         toast.promise(
             utils.performRequest("/api/categories/import", {
-                method: "POST",
-                body: formData
-            }).then(resp => {
-                openUploadDialog(false);
-                utils.hideSpinner();
-            }),
+                    method: "POST",
+                    body: formData
+                })
+                .then(resp => fetchCategories())
+                .then(resp => {
+                    setSelectedCategory(null);
+                    openUploadDialog(false);
+                    utils.hideSpinner();
+                }),
             {
                 loading: "Importing...",
                 success: "Imported",
