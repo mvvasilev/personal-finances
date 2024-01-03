@@ -38,4 +38,6 @@ public interface TransactionCategoryRepository extends JpaRepository<Transaction
             nativeQuery = true
     )
     Collection<TransactionCategory> fetchCategoriesForTransaction(@Param("transactionId") Long transactionId);
+
+    void deleteAllByUserId(@Param("userId") Integer userId);
 }

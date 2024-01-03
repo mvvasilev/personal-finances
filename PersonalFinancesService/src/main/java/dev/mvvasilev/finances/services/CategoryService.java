@@ -281,6 +281,7 @@ public class CategoryService {
     private CategorizationDTO mapCategorization(final Collection<Categorization> all, Categorization categorization) {
         return new CategorizationDTO(
                 categorization.getId(),
+                categorization.getCategoryId(),
                 new CategorizationRuleDTO(
                         categorization.getCategorizationRule(),
                         categorization.getCategorizationRule().applicableForType()
@@ -349,5 +350,57 @@ public class CategoryService {
         }
 
         return categorizationRepository.saveAndFlush(categorization);
+    }
+
+    public ImportExportCategoriesDTO exportCategoriesForUser(int userId) {
+        final var categories = listForUser(userId);
+
+        return new ImportExportCategoriesDTO(
+                categories,
+                categories.stream().map(c -> fetchCategorizationRules(c.id())).flatMap(Collection::stream).toList()
+        );
+    }
+
+    public Collection<Long> importCategoriesForUser(ImportExportCategoriesDTO dto, boolean deleteExisting, int userId) {
+        if (deleteExisting) {
+            transactionCategoryRepository.deleteAllByUserId(userId);
+        }
+
+        return dto.categories().stream().map(c -> {
+            var category = new TransactionCategory();
+
+            category.setUserId(userId);
+            category.setName(c.name());
+            category.setRuleBehavior(c.ruleBehavior());
+
+            category = transactionCategoryRepository.saveAndFlush(category);
+
+            createCategorizationRules(
+                    category.getId(),
+                    category.getUserId(),
+                    dto.categorizationRules().stream()
+                            .filter(cr -> Objects.equals(cr.categoryId(), c.id()))
+                            .map(this::mapCategorizationForImport)
+                            .toList()
+            );
+
+            return category.getId();
+        }).toList();
+    }
+
+    private CreateCategorizationDTO mapCategorizationForImport(CategorizationDTO cr) {
+        return new CreateCategorizationDTO (
+                cr.rule().rule(),
+                cr.ruleBasedOn().field(),
+                Optional.ofNullable(cr.stringValue()),
+                Optional.ofNullable(cr.numericGreaterThan()),
+                Optional.ofNullable(cr.numericLessThan()),
+                Optional.ofNullable(cr.numericValue()),
+                Optional.ofNullable(cr.timestampGreaterThan()),
+                Optional.ofNullable(cr.timestampLessThan()),
+                Optional.ofNullable(cr.booleanValue()),
+                cr.left() != null ? mapCategorizationForImport(cr.left()) : null,
+                cr.right() != null ? mapCategorizationForImport(cr.right()) : null
+        );
     }
 }

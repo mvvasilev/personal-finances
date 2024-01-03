@@ -29,8 +29,13 @@ public class StatisticsController extends AbstractRestController {
         this.statisticsService = statisticsService;
     }
 
+    @GetMapping("/timePeriods")
+    public ResponseEntity<APIResponseDTO<TimePeriod[]>> fetchTimePeriods() {
+        return ok(TimePeriod.values());
+    }
+
     @GetMapping("/totalSpendingByCategory")
-    @PreAuthorize("@authService.isOwner(#categoryId, T(dev.mvvasilev.finances.entity.RawStatement))")
+    @PreAuthorize("@authService.isOwner(#categoryId, T(dev.mvvasilev.finances.entity.TransactionCategory))")
     public ResponseEntity<APIResponseDTO<SpendingByCategoriesDTO>> fetchSpendingByCategory(
             Long[] categoryId,
             @RequestParam(defaultValue = "1970-01-01T00:00:00") LocalDateTime from,
@@ -40,7 +45,7 @@ public class StatisticsController extends AbstractRestController {
     }
 
     @GetMapping("/spendingOverTimeByCategory")
-    @PreAuthorize("@authService.isOwner(#categoryId, T(dev.mvvasilev.finances.entity.RawStatement))")
+    @PreAuthorize("@authService.isOwner(#categoryId, T(dev.mvvasilev.finances.entity.TransactionCategory))")
     public ResponseEntity<APIResponseDTO<SpendingOverTimeByCategoryDTO>> fetchSpendingOverTimeByCategory(
             Long[] categoryId,
             @RequestParam(defaultValue = "DAILY") TimePeriod period,

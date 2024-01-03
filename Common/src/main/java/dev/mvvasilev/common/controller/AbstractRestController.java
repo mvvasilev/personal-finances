@@ -3,7 +3,9 @@ package dev.mvvasilev.common.controller;
 import dev.mvvasilev.common.web.APIErrorDTO;
 import dev.mvvasilev.common.web.APIResponseDTO;
 import dev.mvvasilev.common.web.CrudResponseDTO;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 import java.util.Collection;
@@ -24,11 +26,11 @@ public abstract class AbstractRestController {
         return withStatus(HttpStatus.OK, body);
     }
 
-    protected <T> ResponseEntity<APIResponseDTO<Object>> emptySuccess() {
+    protected ResponseEntity<APIResponseDTO<Object>> emptySuccess() {
         return withStatus(HttpStatus.OK, null);
     }
 
-    protected <T> ResponseEntity<APIResponseDTO<CrudResponseDTO>> created(Long id) {
+    protected ResponseEntity<APIResponseDTO<CrudResponseDTO>> created(Long id) {
         return withStatus(HttpStatus.CREATED, new CrudResponseDTO(id, null));
     }
 
@@ -49,4 +51,10 @@ public abstract class AbstractRestController {
         return withStatus(HttpStatus.OK, new CrudResponseDTO(null, affectedRows));
     }
 
+    protected ResponseEntity<APIResponseDTO<byte[]>> file(byte[] fileBytes, MediaType mediaType) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(mediaType);
+
+        return new ResponseEntity<>(new APIResponseDTO<>(fileBytes, null, HttpStatus.OK.value(), HttpStatus.OK.getReasonPhrase()), headers, HttpStatus.OK);
+    }
 }

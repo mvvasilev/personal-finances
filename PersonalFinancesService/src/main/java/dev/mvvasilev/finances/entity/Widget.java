@@ -1,6 +1,7 @@
 package dev.mvvasilev.finances.entity;
 
 import dev.mvvasilev.common.data.AbstractEntity;
+import dev.mvvasilev.common.data.UserOwned;
 import dev.mvvasilev.finances.enums.WidgetType;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Converter;
@@ -9,20 +10,22 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(schema = "widgets")
-public class Widget extends AbstractEntity {
+public class Widget extends AbstractEntity implements UserOwned {
 
     @Convert(converter = WidgetType.JpaConverter.class)
     private WidgetType type;
 
-    private int positionX;
+    private Integer positionX;
 
-    private int positionY;
+    private Integer positionY;
 
-    private int sizeX;
+    private Integer sizeX;
 
-    private int sizeY;
+    private Integer sizeY;
 
     private String name;
+
+    private Integer userId;
 
     public Widget() {
     }
@@ -35,35 +38,35 @@ public class Widget extends AbstractEntity {
         this.type = type;
     }
 
-    public int getPositionX() {
+    public Integer getPositionX() {
         return positionX;
     }
 
-    public void setPositionX(int positionX) {
+    public void setPositionX(Integer positionX) {
         this.positionX = positionX;
     }
 
-    public int getPositionY() {
+    public Integer getPositionY() {
         return positionY;
     }
 
-    public void setPositionY(int positionY) {
+    public void setPositionY(Integer positionY) {
         this.positionY = positionY;
     }
 
-    public int getSizeX() {
+    public Integer getSizeX() {
         return sizeX;
     }
 
-    public void setSizeX(int sizeX) {
+    public void setSizeX(Integer sizeX) {
         this.sizeX = sizeX;
     }
 
-    public int getSizeY() {
+    public Integer getSizeY() {
         return sizeY;
     }
 
-    public void setSizeY(int sizeY) {
+    public void setSizeY(Integer sizeY) {
         this.sizeY = sizeY;
     }
 
@@ -73,5 +76,14 @@ public class Widget extends AbstractEntity {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    @Override
+    public Integer getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Integer userId) {
+        this.userId = userId;
     }
 }

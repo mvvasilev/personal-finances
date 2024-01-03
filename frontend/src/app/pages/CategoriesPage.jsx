@@ -2,7 +2,7 @@ import {
     Category as CategoryIcon,
     Add as AddIcon,
     Close as CloseIcon,
-    Save as SaveIcon
+    Save as SaveIcon, Download, Upload
 } from "@mui/icons-material";
 import {useEffect, useState} from "react";
 import utils from "@/utils.js";
@@ -11,17 +11,21 @@ import Grid from "@mui/material/Unstable_Grid2";
 import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
 import {
+    Checkbox,
     Dialog,
     DialogActions,
     DialogContent,
     DialogContentText,
-    DialogTitle,
+    DialogTitle, FormControlLabel,
     Modal,
     TextField
 } from "@mui/material";
 import Box from "@mui/material/Box";
 import CategorizationRulesEditor from "@/components/categories/CategorizationRulesEditor.jsx";
 import CategoriesBox from "@/components/categories/CategoriesBox.jsx";
+import {PARAMS} from "@/components/widgets/WidgetParameters.js";
+import * as React from "react";
+import VisuallyHiddenInput from "@/components/VisuallyHiddenInput.jsx";
 
 export default function CategoriesPage() {
 
@@ -31,6 +35,8 @@ export default function CategoriesPage() {
     const [showConfirmDeleteCategoryModal, openConfirmDeleteCategoryModal] = useState(false);
     const [showApplyRulesConfirmModal, openApplyRulesConfirmModal] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState(null);
+    const [showUploadDialog, openUploadDialog] = useState(false);
+    const [replaceExistingOnUpload, setReplaceExistingOnUpload] = useState(true);
 
     useEffect(() => {
         utils.showSpinner();
@@ -155,6 +161,61 @@ export default function CategoriesPage() {
         });
     }
 
+    function downloadCategories() {
+        toast.promise(
+            utils.performRequest("/api/categories/export")
+                .then(resp => resp.json())
+                .then(resp => {
+                    const linkSource = `data:application/json;base64,${resp.result}`;
+                    const downloadLink = document.createElement("a");
+                    const fileName = "categories.json";
+
+                    downloadLink.href = linkSource;
+                    downloadLink.download = fileName;
+                    downloadLink.click();
+                }),
+            {
+                loading: "Exporting...",
+                success: "Exported",
+                error: (err) => `Uh oh! Something went wrong: ${err}`
+            }
+        )
+    }
+
+    function uploadCategories(e) {
+        utils.showSpinner();
+
+        if (!e.target.files) {
+            return;
+        }
+
+        const file = e.target.files[0];
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("deleteExisting", replaceExistingOnUpload);
+
+        toast.promise(
+            utils.performRequest("/api/categories/import", {
+                method: "POST",
+                body: formData
+            }).then(resp => {
+                openUploadDialog(false);
+                utils.hideSpinner();
+            }),
+            {
+                loading: "Importing...",
+                success: "Imported",
+                error: (err) => {
+                    utils.hideSpinner();
+                    openUploadDialog(false);
+
+                    return `Uh oh! Something went wrong: ${err}`;
+                }
+            }
+        );
+    }
+
     return (
         <Grid container spacing={1}>
 
@@ -169,7 +230,17 @@ export default function CategoriesPage() {
                         Apply Rules
                     </Button>
                 </Grid>
-                <Grid xs={10} lg={10}></Grid>
+                <Grid xs={1} lg={1}>
+                    <Button sx={{ width:"100%" }} variant="outlined" startIcon={<Download />} onClick={() => downloadCategories()}>
+                        Export
+                    </Button>
+                </Grid>
+                <Grid xs={1} lg={1}>
+                    <Button sx={{ width:"100%" }} variant="outlined" startIcon={<Upload />} onClick={() => openUploadDialog(true)}>
+                        Import
+                    </Button>
+                </Grid>
+                <Grid xs={8} lg={8}></Grid>
             </Grid>
 
             <Grid xs={12} lg={12}>
@@ -300,6 +371,48 @@ export default function CategoriesPage() {
                     </Button>
                     <Button
                         onClick={() => openApplyRulesConfirmModal(false)}
+                        autoFocus
+                        variant="contained"
+                    >
+                        Cancel
+                    </Button>
+                </DialogActions>
+            </Dialog>
+            <Dialog
+                open={showUploadDialog}
+            >
+                <DialogTitle id="upload-dialog-title">
+                    {"Replace Existing Categories?"}
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Would you like to replace your existing categories completely with the ones in your import?
+                        ( Note that this will remove all current categories from your transactions )
+                    </DialogContentText>
+                    <FormControlLabel
+                        sx={{ width: "100%", height: "100%" }}
+                        value="end"
+                        control={
+                            <Checkbox
+                                checked={replaceExistingOnUpload}
+                                onChange={(e) => {
+                                    setReplaceExistingOnUpload(e.target.checked);
+                                }}
+                            />
+                        }
+                        label="Replace Existing Categories"
+                        labelPlacement="end"
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button
+                        component="label"
+                    >
+                        <VisuallyHiddenInput type="file" onChange={uploadCategories}/>
+                        Select File
+                    </Button>
+                    <Button
+                        onClick={() => openUploadDialog(false)}
                         autoFocus
                         variant="contained"
                     >

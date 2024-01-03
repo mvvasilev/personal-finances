@@ -1,3 +1,5 @@
+CREATE SCHEMA IF NOT EXISTS statistics;
+
 CREATE OR REPLACE FUNCTION statistics.spending_over_time(
     category_ids BIGINT[],
     time_period TEXT,

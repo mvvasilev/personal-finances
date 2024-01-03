@@ -9,5 +9,5 @@ CREATE TABLE IF NOT EXISTS widgets.widget_parameter (
     time_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     time_last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     CONSTRAINT PK_widget_parameter PRIMARY KEY (id),
-    CONSTRAINT FK_widget_parameter_widget FOREIGN KEY (widget_id) REFERENCES widgets.widget(id)
+    CONSTRAINT FK_widget_parameter_widget FOREIGN KEY (widget_id) REFERENCES widgets.widget(id) ON DELETE CASCADE
 );

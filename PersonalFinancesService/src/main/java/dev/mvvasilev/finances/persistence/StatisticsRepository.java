@@ -35,7 +35,7 @@ public class StatisticsRepository {
                         JOIN categories.processed_transaction_category AS ptc ON ptc.processed_transaction_id = pt.id
                         WHERE
                                 pt.is_inflow = FALSE
-                            AND ptc.category_id IN (?1)
+                            AND ptc.category_id = any(?1)
                             AND (pt.timestamp BETWEEN ?2 AND ?3)
                         GROUP BY ptc.category_id
                         ORDER BY total_spending DESC;

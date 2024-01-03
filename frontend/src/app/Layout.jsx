@@ -10,6 +10,7 @@ import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
+import {Analytics as AnalyticsIcon} from '@mui/icons-material';
 import {Home as HomeIcon} from '@mui/icons-material';
 import {ReceiptLong as StatementsIcon} from '@mui/icons-material';
 import {Receipt as TransactionsIcon} from '@mui/icons-material';
@@ -27,7 +28,7 @@ import {AdapterDayjs} from "@mui/x-date-pickers/AdapterDayjs";
 const DRAWER_WIDTH = 240;
 
 const NAV_LINKS = [
-    {text: 'Home', to: '/', icon: HomeIcon},
+    {text: 'Statistics', to: '/', icon: AnalyticsIcon},
     {text: 'Statements', to: '/statements', icon: StatementsIcon},
     {text: 'Categories', to: '/categories', icon: CategoryIcon},
     {text: 'Transactions', to: '/transactions', icon: TransactionsIcon},
