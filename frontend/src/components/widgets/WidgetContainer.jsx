@@ -41,8 +41,8 @@ export default function WidgetContainer({widget, sx, onEdit, onRemove}) {
 
         var includeUncategorized = widget.parameters?.find(p => p.name === PARAMS.INCLUDE_UNCATEGORIZED)?.booleanValue ?? false;
 
-        queryString += `&fromDate=${fromDate}`;
-        queryString += `&toDate=${toDate}`;
+        queryString += `&from=${fromDate.toISOString()}`;
+        queryString += `&to=${toDate.toISOString()}`;
         queryString += `&includeUncategorized=${includeUncategorized}`;
 
         switch (widget.type) {
@@ -118,7 +118,7 @@ export default function WidgetContainer({widget, sx, onEdit, onRemove}) {
                 <Grid xs={12} lg={12}>
                     <div className={"grid-drag-cancel"} style={{ position: "relative", height: "100%", width: "100%" }}>
                         {
-                            data && widget.type === "TOTAL_SPENDING_PER_CATEGORY" &&
+                            !utils.isNullOrUndefined(data) && widget.type === "TOTAL_SPENDING_PER_CATEGORY" &&
                             <Pie
                                 options={{
                                     responsive: true,
@@ -137,11 +137,11 @@ export default function WidgetContainer({widget, sx, onEdit, onRemove}) {
                             />
                         }
                         {
-                            data && widget.type === "SPENDING_OVER_TIME_PER_CATEGORY" &&
+                            !utils.isNullOrUndefined(data) && widget.type === "SPENDING_OVER_TIME_PER_CATEGORY" &&
                             <Line />
                         }
                         {
-                            data && widget.type === "SUM_PER_CATEGORY" &&
+                            !utils.isNullOrUndefined(data) && widget.type === "SUM_PER_CATEGORY" &&
                             <Typography sx={{
                                 fontSize: "2.3em"
                             }}>

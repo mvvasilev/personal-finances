@@ -7,6 +7,7 @@ import dev.mvvasilev.finances.dtos.SpendingOverTimeByCategoryDTO;
 import dev.mvvasilev.finances.enums.TimePeriod;
 import dev.mvvasilev.finances.services.StatisticsService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -38,8 +39,10 @@ public class StatisticsController extends AbstractRestController {
     @PreAuthorize("@authService.isOwner(#categoryId, T(dev.mvvasilev.finances.entity.TransactionCategory))")
     public ResponseEntity<APIResponseDTO<SpendingByCategoriesDTO>> fetchSpendingByCategory(
             Long[] categoryId,
-            @RequestParam(defaultValue = "1970-01-01T00:00:00") LocalDateTime from,
-            @RequestParam(defaultValue = "2099-01-01T00:00:00") LocalDateTime to,
+            @RequestParam(defaultValue = "1970-01-01T00:00:00Z")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam(defaultValue = "2099-01-01T00:00:00Z")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to,
             @RequestParam(defaultValue = "false") Boolean includeUncategorized
     ) {
         return ok(statisticsService.spendingByCategory(categoryId, from, to));
@@ -50,8 +53,10 @@ public class StatisticsController extends AbstractRestController {
     public ResponseEntity<APIResponseDTO<SpendingOverTimeByCategoryDTO>> fetchSpendingOverTimeByCategory(
             Long[] categoryId,
             @RequestParam(defaultValue = "DAILY") TimePeriod period,
-            @RequestParam(defaultValue = "1970-01-01T00:00:00") LocalDateTime from,
-            @RequestParam(defaultValue = "2099-01-01T00:00:00") LocalDateTime to,
+            @RequestParam(defaultValue = "1970-01-01T00:00:00Z")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam(defaultValue = "2099-01-01T00:00:00Z")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to,
             @RequestParam(defaultValue = "false") Boolean includeUncategorized
     ) {
         return ok(statisticsService.spendingByCategoryOverTime(categoryId, period, from, to));
@@ -61,8 +66,10 @@ public class StatisticsController extends AbstractRestController {
     @PreAuthorize("@authService.isOwner(#categoryId, T(dev.mvvasilev.finances.entity.TransactionCategory))")
     public ResponseEntity<APIResponseDTO<Double>> sum(
             Long[] categoryId,
-            @RequestParam(defaultValue = "1970-01-01T00:00:00") LocalDateTime from,
-            @RequestParam(defaultValue = "2099-01-01T00:00:00") LocalDateTime to,
+            @RequestParam(defaultValue = "1970-01-01T00:00:00Z")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam(defaultValue = "2099-01-01T00:00:00Z")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to,
             @RequestParam(defaultValue = "false") Boolean includeUncategorized
     ) {
         return ok(statisticsService.sumByCategory(categoryId, from, to, includeUncategorized));

@@ -74,10 +74,14 @@ public class StatisticsRepository {
     public Double sumByCategory(Long[] categoryId, LocalDateTime from, LocalDateTime to, Boolean includeUncategorized) {
         Query nativeQuery = entityManager.createNativeQuery(
                """
-               SELECT SUM(pt.amount) AS result
-               FROM transactions.processed_transaction AS pt
-               LEFT OUTER JOIN categories.processed_transaction_category AS ptc ON pt.id = ptc.processed_transaction_id
-               WHERE (ptc.category_id = any(?1) OR (?4 AND ptc.category_id IS NULL)) AND (pt.timestamp BETWEEN ?2 AND ?3)
+               WITH transactions AS (
+                   SELECT DISTINCT pt.*
+                   FROM transactions.processed_transaction AS pt
+                   LEFT OUTER JOIN categories.processed_transaction_category AS ptc ON pt.id = ptc.processed_transaction_id
+                   WHERE (pt.timestamp BETWEEN ?2 AND ?3) AND (ptc.category_id = any(?1) OR (?4 AND ptc.category_id IS NULL))
+               )
+               SELECT COALESCE(SUM(pt.amount), 0) AS result
+               FROM transactions AS pt
                """,
                 Tuple.class
         );

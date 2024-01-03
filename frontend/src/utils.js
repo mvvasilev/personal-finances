@@ -41,6 +41,9 @@ let utils = {
     },
     formatCurrency(number) {
         return LEV_FORMAT.format(number);
+    },
+    isNullOrUndefined(obj) {
+        return obj === null || obj === undefined;
     }
 }
 

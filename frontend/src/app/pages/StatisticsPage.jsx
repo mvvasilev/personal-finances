@@ -6,7 +6,7 @@ import {
 } from '@mui/material';
 import Grid from "@mui/material/Unstable_Grid2";
 import Button from "@mui/material/Button";
-import {Addchart, Save} from "@mui/icons-material";
+import {Addchart, Save, Warning} from "@mui/icons-material";
 import WidgetContainer from "@/components/widgets/WidgetContainer.jsx";
 import 'react-grid-layout/css/styles.css';
 import {useEffect, useState} from "react";
@@ -25,6 +25,7 @@ export default function StatisticsPage() {
     const [isWidgetModalOpen, openWidgetModal] = useState(false);
     const [isRemoveWidgetDialogShown, showRemoveWidgetDialog] = useState(false);
     const [removingWidgetId, setRemovingWidgetId] = useState(null);
+    const [isUnsavedLayoutWarningShown, showUnsavedLayoutWarning] = useState(false);
 
     useEffect(() => {
         fetchWidgets();
@@ -48,7 +49,10 @@ export default function StatisticsPage() {
                     parameters: w.parameters
                 }
             }) ?? []))
-            .then(r => utils.hideSpinner());
+            .then(r => {
+                utils.hideSpinner();
+                showUnsavedLayoutWarning(false);
+            });
     }
 
     function openWidgetCreationModal() {
@@ -119,8 +123,11 @@ export default function StatisticsPage() {
 
         toast.promise(
             Promise.resolve(promises)
-                .then(r => fetchWidgets())
-                .then(r => utils.hideSpinner()),
+                //.then(r => fetchWidgets())
+                .then(r => {
+                    utils.hideSpinner();
+                    showUnsavedLayoutWarning(false);
+                }),
             {
                 loading: "Saving...",
                 success: "Saved",
@@ -202,7 +209,7 @@ export default function StatisticsPage() {
                             sx={{
                                 width: "100%"
                             }}
-                            variant="contained"
+                            variant={isUnsavedLayoutWarningShown ? "contained" : "outlined"}
                             onClick={saveWidgetsLayout}
                             startIcon={<Save/>}
                         >
@@ -225,6 +232,7 @@ export default function StatisticsPage() {
                             })
 
                             setWidgets([...newWidgets])
+                            console.log("layout change")
                         }}
                         draggableCancel=".grid-drag-cancel"
                         cols={{lg: 12, md: 10, sm: 6, xs: 4, xxs: 2}}
