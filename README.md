@@ -81,5 +81,5 @@ uses the awesome [Authentik](https://github.com/goauthentik/authentik) project.
 
 /* TODO */
 
-### Network Architecture / Topology
+### Container Diagram
 ![finances_architecture.png](.readme/finances_architecture.png)
