@@ -60,18 +60,18 @@ on the page, allowing you to create your own personal financial dashboard.
 
 ![img.png](.readme/statistics_page.png)
 
+### Browse Your Transactions
+
+You can access your parsed transactions from the `Transactions` page
+
+![img.png](.readme/transactions_page.png)
+
 ## Setup
 
 The Personal Finances application is actually 3+1 separate applications. The first 3 can be found in this very repository,
 and they are the frontend, the API gateway, and the PersonalFinancesService. The +1 mentioned is actually the authorization
 provider, which in theory could be anything that supports OpenIDConnect or OAuth2. My personal auth provider `auth.mvvasilev.dev`
 uses the awesome [Authentik](https://github.com/goauthentik/authentik) project.
-
-### Browse Your Transactions
-
-You can access your parsed transactions from the `Transactions` page
-
-![img.png](.readme/transactions_page.png)
 
 ### Building Docker Images
 
