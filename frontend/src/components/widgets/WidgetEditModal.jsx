@@ -228,7 +228,7 @@ export default function WidgetEditModal(
                     </Grid>
                     <Grid xs={8} lg={8}>
                         {
-                            widget.isFromDateStatic ? (
+                            widgetParams(PARAMS.IS_FROM_DATE_STATIC, val => val.booleanValue = false)?.booleanValue ?? false ? (
                                 <DatePicker
                                     sx={{ width: "100%", height: "100%" }}
                                     label="From"
