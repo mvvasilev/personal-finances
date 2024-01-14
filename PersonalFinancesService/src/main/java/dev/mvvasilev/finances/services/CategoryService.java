@@ -82,7 +82,7 @@ public class CategoryService {
 
         processedTransactionCategoryRepository.deleteAllForTransactions(transactions.stream().map(AbstractEntity::getId).toList());
 
-        // Run each category's rules for all transactions in parallel to eachother
+        // Run each category's rules for all transactions concurrently to each other
         final var futures = categorizations.stream()
                 .filter(Categorization::isRoot)
                 .collect(Collectors.groupingBy(Categorization::getCategoryId, HashMap::new, Collectors.toList()))
@@ -118,7 +118,7 @@ public class CategoryService {
                 }))
                 .toArray(length -> (CompletableFuture<List<ProcessedTransactionCategory>>[]) new CompletableFuture[length]);
 
-        // Run them all in parallel
+        // Run them all concurrently/in parallel
         final var ptcs = CompletableFuture.allOf(futures).thenApply((v) ->
                 Arrays.stream(futures)
                         .flatMap(future -> future.join().stream())
@@ -128,15 +128,9 @@ public class CategoryService {
         processedTransactionCategoryRepository.saveAllAndFlush(ptcs);
     }
 
-    private Optional<ProcessedTransactionCategory> categorizeTransaction(final Collection<Categorization> allCategorizations, Categorization categorization, ProcessedTransaction processedTransaction) {
-        if (matchesRule(allCategorizations, categorization, processedTransaction)) {
-            return Optional.of(new ProcessedTransactionCategory(processedTransaction.getId(), categorization.getCategoryId()));
-        } else {
-            return Optional.empty();
-        }
-    }
 
-    private boolean matchesRule(final Collection<Categorization> allCategorizations, final Categorization categorization, final ProcessedTransaction processedTransaction) {
+
+    public boolean matchesRule(final Collection<Categorization> allCategorizations, final Categorization categorization, final ProcessedTransaction processedTransaction) {
         return switch (categorization.getCategorizationRule()) {
             // string operations
             case STRING_REGEX, STRING_EQ, STRING_CONTAINS, STRING_IS_EMPTY -> {
