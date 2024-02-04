@@ -49,7 +49,7 @@ public class Categorization extends AbstractEntity implements UserOwned {
 
     @Override
     public Integer getUserId() {
-        return null;
+        return userId;
     }
 
     public void setUserId(Integer userId) {
@@ -159,4 +159,6 @@ public class Categorization extends AbstractEntity implements UserOwned {
     public void setRoot(boolean root) {
         isRoot = root;
     }
+
+
 }

@@ -1,36 +1,37 @@
-package dev.mvvasilev.finances.services;
+package dev.mvvasilev.finances;
 
-import dev.mvvasilev.finances.CategorizationBuilder;
 import dev.mvvasilev.finances.persistence.CategorizationRepository;
 import dev.mvvasilev.finances.persistence.ProcessedTransactionCategoryRepository;
 import dev.mvvasilev.finances.persistence.ProcessedTransactionRepository;
 import dev.mvvasilev.finances.persistence.TransactionCategoryRepository;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import dev.mvvasilev.finances.services.CategoryService;
+import org.junit.jupiter.api.BeforeEach;
+import org.mockito.Mock;
 
-import static org.junit.jupiter.api.Assertions.*;
-@SpringBootTest
-class CategoryServiceTest {
+public class CategoryServiceTests {
 
-    @MockBean
+    @Mock
     private TransactionCategoryRepository transactionCategoryRepository;
 
-    @MockBean
+    @Mock
     private CategorizationRepository categorizationRepository;
 
-    @MockBean
+    @Mock
     private ProcessedTransactionRepository processedTransactionRepository;
 
-    @MockBean
+    @Mock
     private ProcessedTransactionCategoryRepository processedTransactionCategoryRepository;
 
-    @Autowired
     private CategoryService service;
 
-    @Test
-    void matchesRule() {
-
+    @BeforeEach
+    public void setup() {
+        service = new CategoryService(
+                transactionCategoryRepository,
+                categorizationRepository,
+                processedTransactionRepository,
+                processedTransactionCategoryRepository
+        );
     }
+
 }

@@ -1,6 +1,6 @@
-rootProject.name = 'personal-finances'
+rootProject.name = 'pefi'
 
-include 'PersonalFinancesService'
-include 'APIGateway'
-include 'Common'
-
+include 'pefi-frontend'
+include 'pefi-api-gateway'
+include 'pefi-common'
+include 'pefi-monolith'

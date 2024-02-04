@@ -5,13 +5,15 @@
     <option name="linkedExternalProjectsSettings">
       <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="gradleHome" value="/usr/share/java/gradle" />
         <option name="gradleJvm" value="21" />
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
-            <option value="$PROJECT_DIR$/APIGateway" />
-            <option value="$PROJECT_DIR$/Common" />
-            <option value="$PROJECT_DIR$/PersonalFinancesService" />
+            <option value="$PROJECT_DIR$/pefi-api-gateway" />
+            <option value="$PROJECT_DIR$/pefi-common" />
+            <option value="$PROJECT_DIR$/pefi-frontend" />
+            <option value="$PROJECT_DIR$/pefi-monolith" />
           </set>
         </option>
       </GradleProjectSettings>
