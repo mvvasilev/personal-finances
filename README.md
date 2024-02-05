@@ -75,11 +75,11 @@ uses the awesome [Authentik](https://github.com/goauthentik/authentik) project.
 
 ### Building Docker Images
 
-/* TODO */
+`docker-compose build` in root directory
 
 ### Docker Compose
 
-/* TODO */
+see [docker-compose.yml](docker-compose.yml)
 
 ### Container Diagram
 ![pefi-architecture.png](.readme/pefi-architecture.png)
