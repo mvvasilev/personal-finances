@@ -7,7 +7,14 @@ let LEV_FORMAT = new Intl.NumberFormat('bg-BG', {
 
 let utils = {
     performRequest: async (url, options) => {
-        return await fetch(url, options).then(resp => {
+        let opts = options ?? { headers: {} };
+        return await fetch(url, {
+            ...opts,
+            headers: {
+                ...opts.headers,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        }).then(resp => {
             if (resp.status === 401) {
                 window.location.replace(`${window.location.origin}/oauth2/authorization/authentik`)
 

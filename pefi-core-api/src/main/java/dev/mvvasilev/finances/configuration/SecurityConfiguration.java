@@ -14,7 +14,6 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.filter.CommonsRequestLoggingFilter;
 
 @Configuration
-@Import(CommonSwaggerConfiguration.class)
-@EnableTransactionManagement
+@Import(CommonSecurityConfiguration.class)
 public class SecurityConfiguration {
 }

@@ -2,17 +2,9 @@ spring:
   cloud:
     gateway:
       routes:
-        - id: core-api
-          uri: ${CORE_API_URI}
-          order: 1
-          predicates:
-            - Path=/api/**
-          filters:
-            - RewritePath=/api/(?<segment>.*), /$\{segment}
-            - TokenRelay=
         - id: statements-api
           uri: ${STATEMENTS_API_URI}
-          order: 2
+          order: 1
           predicates:
             - Path=/api/statements/**
           filters:
@@ -20,9 +12,17 @@ spring:
             - TokenRelay=
         - id: widgets-api
           uri: ${WIDGETS_API_URI}
-          order: 3
+          order: 2
           predicates:
             - Path=/api/widgets/**
+          filters:
+            - RewritePath=/api/(?<segment>.*), /$\{segment}
+            - TokenRelay=
+        - id: core-api
+          uri: ${CORE_API_URI}
+          order: 3
+          predicates:
+            - Path=/api/**
           filters:
             - RewritePath=/api/(?<segment>.*), /$\{segment}
             - TokenRelay=

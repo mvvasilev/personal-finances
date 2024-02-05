@@ -17,9 +17,11 @@ import org.springframework.security.oauth2.client.registration.ReactiveClientReg
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestCustomizers;
 import org.springframework.security.oauth2.client.web.server.DefaultServerOAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.client.web.server.ServerOAuth2AuthorizationRequestResolver;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.authentication.HttpStatusServerEntryPoint;
+import org.springframework.security.web.server.authentication.RedirectServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.authentication.RedirectServerAuthenticationSuccessHandler;
 import org.springframework.session.data.redis.config.annotation.web.server.EnableRedisWebSession;
 import org.springframework.web.server.WebSession;
@@ -47,6 +49,7 @@ public class SecurityConfiguration implements BeanClassLoaderAware {
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http, ServerOAuth2AuthorizationRequestResolver resolver) {
         http
+                .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(c -> {
                     c.pathMatchers("/**").permitAll();
@@ -93,7 +96,8 @@ public class SecurityConfiguration implements BeanClassLoaderAware {
 
                         return ex.getExchange().getSession().flatMap(WebSession::invalidate);
                     });
-                });
+                })
+                .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusServerEntryPoint(HttpStatus.UNAUTHORIZED)));
 
         return http.build();
     }
