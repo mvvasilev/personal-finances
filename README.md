@@ -82,4 +82,4 @@ uses the awesome [Authentik](https://github.com/goauthentik/authentik) project.
 /* TODO */
 
 ### Container Diagram
-![finances_architecture.png](.readme/finances_architecture.png)
+![pefi-architecture.png](.readme/pefi-architecture.png)
