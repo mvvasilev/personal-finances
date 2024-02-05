@@ -1,5 +1,6 @@
 package dev.mvvasilev.finances.dtos;
 
+import dev.mvvasilev.common.enums.ProcessedTransactionField;
 import dev.mvvasilev.finances.enums.CategorizationRule;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;

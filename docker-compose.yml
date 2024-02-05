@@ -1,0 +1,112 @@
+version: '3.4'
+
+services:
+  api-gateway:
+    build: ./pefi-api-gateway
+    ports:
+      - '8080:8080'
+    environment:
+      PROFILE: development
+      AUTHENTIK_CLIENT_ID: r72Ja9IIGBSoKpBsYTuJ2yBZMmJnXcWnLdW3Sgpp
+      AUTHENTIK_CLIENT_SECRET: LhhuUZlQPFPzGGEuxDhvlyBtten0LufRHx8I5ZH63031yHk7UdUboCR2WgNA4aSpmmFOz6TfkgpYHy1eh3jWeWUGpisPZxZ2PCJlSkJBtoF54MDh1iBZZSQ1gcD6r69H
+      AUTHENTIK_ISSUER_URL: https://auth.mvvasilev.dev/application/o/personal-finances/
+      AUTHENTIK_BACK_CHANNEL_LOGOUT_URL: https://auth.mvvasilev.dev/application/o/personal-finances/end-session/
+      GATEWAY_URI: http://localhost:8080
+      CORE_API_URI: http://core-api:8081
+      STATEMENTS_API_URI: http://statements-api:8081
+      WIDGETS_API_URI: http://widgets-api:8081
+      FRONTEND_URI: http://frontend:5173
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      SSL_ENABLED: true
+      SSL_KEY_STORE_TYPE: PKCS12
+      SSL_KEY_STORE: classpath:keystore/local.p12
+      SSL_KEY_STORE_PASSWORD: asdf1234
+      SSL_KEY_ALIAS: local
+
+  frontend:
+    build: ./pefi-frontend
+    ports:
+      - '5173:5173'
+
+  core-api:
+    build: ./pefi-core-api
+    ports:
+      - '8081:8081'
+    environment:
+      PROFILE: 'development'
+      AUTHENTIK_ISSUER_URL: 'https://auth.mvvasilev.dev/application/o/personal-finances/'
+      DATASOURCE_URL: 'jdbc:postgresql://database:5432/finances'
+      DATASOURCE_USER: 'postgres'
+      DATASOURCE_PASSWORD: 'postgres'
+      KAFKA_SERVERS: 'kafka-broker:9092'
+
+  statements-api:
+    build: ./pefi-statements-api
+    ports:
+      - '8082:8081'
+    environment:
+      PROFILE: 'development'
+      AUTHENTIK_ISSUER_URL: 'https://auth.mvvasilev.dev/application/o/personal-finances/'
+      DATASOURCE_URL: 'jdbc:postgresql://database:5432/finances'
+      DATASOURCE_USER: 'postgres'
+      DATASOURCE_PASSWORD: 'postgres'
+      KAFKA_SERVERS: 'kafka-broker:9092'
+
+  widgets-api:
+    build: ./pefi-widgets-api
+    ports:
+      - '8083:8081'
+    environment:
+      PROFILE: 'development'
+      AUTHENTIK_ISSUER_URL: 'https://auth.mvvasilev.dev/application/o/personal-finances/'
+      DATASOURCE_URL: 'jdbc:postgresql://database:5432/finances'
+      DATASOURCE_USER: 'postgres'
+      DATASOURCE_PASSWORD: 'postgres'
+
+  redis:
+    image: redis/redis-stack:latest
+    ports:
+      - '6379:6379'
+      - '6380:8001'
+
+  database:
+    image: postgres:16.1-alpine
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_DB: 'finances'
+      POSTGRES_USER: 'postgres'
+      POSTGRES_PASSWORD: 'postgres'
+
+  kafka-broker:
+    image: confluentinc/cp-kafka:7.5.3
+    hostname: broker
+    container_name: broker
+    depends_on:
+      - zookeeper
+    ports:
+      - "29092:29092"
+      - "9092:9092"
+      - "9101:9101"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.3
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000

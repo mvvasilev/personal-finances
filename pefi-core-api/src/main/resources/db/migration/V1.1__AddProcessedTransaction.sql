@@ -1,3 +1,5 @@
+CREATE SCHEMA IF NOT EXISTS transactions;
+
 CREATE TABLE IF NOT EXISTS transactions.processed_transaction
 (
     id                 BIGSERIAL,
@@ -9,6 +11,5 @@ CREATE TABLE IF NOT EXISTS transactions.processed_transaction
     time_created       TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     time_last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     statement_id       BIGINT,
-    CONSTRAINT PK_processed_transaction PRIMARY KEY (id),
-    CONSTRAINT FK_processed_transaction_statement FOREIGN KEY (statement_id) REFERENCES transactions.raw_statement(id)
+    CONSTRAINT PK_processed_transaction PRIMARY KEY (id)
 );

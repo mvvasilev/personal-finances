@@ -1,6 +1,6 @@
 FROM eclipse-temurin:21-jdk-alpine
 
-COPY ./build/libs/pefi-core-api-0.0.1-SNAPSHOT.jar app.jar
+COPY ./build/libs/pefi-widgets-api-0.0.1-SNAPSHOT.jar app.jar
 
 EXPOSE 8081
 

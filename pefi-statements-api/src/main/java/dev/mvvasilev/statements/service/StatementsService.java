@@ -1,37 +1,30 @@
 package dev.mvvasilev.statements.service;
 
-import dev.mvvasilev.common.dto.CreateProcessedTransactionDTO;
+import dev.mvvasilev.common.dto.KafkaProcessedTransactionDTO;
+import dev.mvvasilev.common.dto.KafkaReplaceProcessedTransactionsDTO;
 import dev.mvvasilev.common.dto.ProcessedTransactionFieldDTO;
 import dev.mvvasilev.common.enums.ProcessedTransactionField;
 import dev.mvvasilev.common.enums.RawTransactionValueType;
 import dev.mvvasilev.common.exceptions.CommonFinancesException;
 import dev.mvvasilev.common.web.CrudResponseDTO;
+import dev.mvvasilev.statements.configuration.KafkaConfiguration;
 import dev.mvvasilev.statements.dto.*;
-import dev.mvvasilev.statements.entity.RawStatement;
 import dev.mvvasilev.statements.entity.RawTransactionValue;
-import dev.mvvasilev.statements.entity.RawTransactionValueGroup;
 import dev.mvvasilev.statements.entity.TransactionMapping;
 import dev.mvvasilev.statements.enums.MappingConversionType;
 import dev.mvvasilev.statements.persistence.RawStatementRepository;
 import dev.mvvasilev.statements.persistence.RawTransactionValueGroupRepository;
 import dev.mvvasilev.statements.persistence.RawTransactionValueRepository;
 import dev.mvvasilev.statements.persistence.TransactionMappingRepository;
-import org.apache.poi.ss.usermodel.CellType;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
-import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoField;
 import java.util.*;
@@ -40,19 +33,10 @@ import java.util.stream.Collectors;
 
 import static dev.mvvasilev.common.enums.ProcessedTransactionField.*;
 import static dev.mvvasilev.common.enums.ProcessedTransactionField.TIMESTAMP;
-import static dev.mvvasilev.common.enums.RawTransactionValueType.*;
 
 @Service
 @Transactional
 public class StatementsService {
-
-    private static final DateTimeFormatter DEFAULT_DATE_FORMAT = new DateTimeFormatterBuilder()
-            .appendPattern("dd.MM.yyyy[ [HH][:mm][:ss]]")
-            .parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
-            .parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
-            .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0)
-            .toFormatter()
-            .withResolverStyle(ResolverStyle.LENIENT);
 
     private final Logger logger = LoggerFactory.getLogger(StatementsService.class);
 
@@ -64,153 +48,21 @@ public class StatementsService {
 
     private final TransactionMappingRepository transactionMappingRepository;
 
-    // TODO: send processed transactions to be stored via message broker
-    // private final ProcessedTransactionRepository processedTransactionRepository;
+    private final KafkaTemplate<String, KafkaReplaceProcessedTransactionsDTO> replaceTransactionsKafkaTemplate;
 
     @Autowired
-    public StatementsService(RawStatementRepository rawStatementRepository, RawTransactionValueGroupRepository rawTransactionValueGroupRepository, RawTransactionValueRepository rawTransactionValueRepository, TransactionMappingRepository transactionMappingRepository) {
+    public StatementsService(
+            RawStatementRepository rawStatementRepository,
+            RawTransactionValueGroupRepository rawTransactionValueGroupRepository,
+            RawTransactionValueRepository rawTransactionValueRepository,
+            TransactionMappingRepository transactionMappingRepository,
+            KafkaTemplate<String, KafkaReplaceProcessedTransactionsDTO> replaceTransactionsKafkaTemplate
+    ) {
         this.rawStatementRepository = rawStatementRepository;
         this.rawTransactionValueGroupRepository = rawTransactionValueGroupRepository;
         this.rawTransactionValueRepository = rawTransactionValueRepository;
         this.transactionMappingRepository = transactionMappingRepository;
-        // this.processedTransactionRepository = processedTransactionRepository;
-    }
-
-
-    public void uploadStatementFromExcelSheetForUser(final String fileName, final String mimeType, final InputStream workbookInputStream, final int userId) throws IOException {
-
-        var workbook = WorkbookFactory.create(workbookInputStream);
-
-        var firstWorksheet = workbook.getSheetAt(0);
-
-        var lastRowIndex = firstWorksheet.getLastRowNum();
-
-        var statement = new RawStatement();
-        statement.setUserId(userId);
-        statement.setName(fileName);
-
-        statement = rawStatementRepository.saveAndFlush(statement);
-
-        var firstRow = firstWorksheet.getRow(0);
-
-        List<RawTransactionValueGroup> valueGroups = new ArrayList<>();
-
-        // turn each column into a value group
-        for (var c : firstRow) {
-
-            if (c == null || c.getCellType() == CellType.BLANK) {
-                break;
-            }
-
-            var transactionValueGroup = new RawTransactionValueGroup();
-
-            transactionValueGroup.setStatementId(statement.getId());
-            transactionValueGroup.setName(c.getStringCellValue());
-
-            // group type is string by default, if no other type could have been determined
-            var groupType = STRING;
-
-            // iterate down through the rows on this column, looking for the first one to return a type
-            for (int y = c.getRowIndex() + 1; y <= lastRowIndex; y++) {
-                var typeResult = determineGroupType(firstWorksheet, y, c.getColumnIndex());
-
-                // if a type has been determined, stop here
-                if (typeResult.isPresent()) {
-                    groupType = typeResult.get();
-                    break;
-                }
-            }
-
-            transactionValueGroup.setType(groupType);
-
-            valueGroups.add(transactionValueGroup);
-        }
-
-        valueGroups = rawTransactionValueGroupRepository.saveAllAndFlush(valueGroups);
-
-        var column = 0;
-
-        // turn each cell in each row into a value, related to the value group ( column )
-        for (var group : valueGroups) {
-            var groupType = group.getType();
-            var valueList = new ArrayList<RawTransactionValue>();
-
-            for (int y = 1; y < lastRowIndex; y++) {
-                var value = new RawTransactionValue();
-
-                value.setGroupId(group.getId());
-                value.setRowIndex(y);
-
-                try {
-                    var cellValue = firstWorksheet.getRow(y).getCell(column).getStringCellValue().trim();
-
-                    try {
-                        switch (groupType) {
-                            case STRING -> value.setStringValue(cellValue);
-                            case NUMERIC -> value.setNumericValue(Double.parseDouble(cellValue));
-                            case TIMESTAMP -> value.setTimestampValue(LocalDateTime.parse(cellValue, DEFAULT_DATE_FORMAT));
-                            case BOOLEAN -> value.setBooleanValue(Boolean.parseBoolean(cellValue));
-                        }
-                    } catch (Exception e) {
-                        switch (groupType) {
-                            case STRING -> value.setStringValue("");
-                            case NUMERIC -> value.setNumericValue(0.0);
-                            case TIMESTAMP -> value.setTimestampValue(LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.UTC));
-                            case BOOLEAN -> value.setBooleanValue(false);
-                        }
-                    }
-                } catch (IllegalStateException e) {
-                    // Cell was numeric
-                    var cellValue = firstWorksheet.getRow(y).getCell(column).getNumericCellValue();
-
-                    switch (groupType) {
-                        case STRING -> value.setStringValue(Double.toString(cellValue));
-                        case NUMERIC -> value.setNumericValue(cellValue);
-                        case TIMESTAMP -> value.setTimestampValue(LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.UTC));
-                        case BOOLEAN -> value.setBooleanValue(false);
-                    }
-                }
-
-                valueList.add(value);
-            }
-
-            rawTransactionValueRepository.saveAllAndFlush(valueList);
-
-            column++;
-        }
-    }
-
-    private Optional<RawTransactionValueType> determineGroupType(final Sheet worksheet, final int rowIndex, final int columnIndex) {
-        var cell = worksheet.getRow(rowIndex).getCell(columnIndex);
-
-        if (cell == null || cell.getCellType() == CellType.BLANK) {
-            return Optional.empty();
-        }
-
-        if (cell.getCellType() == CellType.BOOLEAN) {
-            return Optional.of(BOOLEAN);
-        }
-
-        if (cell.getCellType() == CellType.NUMERIC) {
-            return Optional.of(NUMERIC);
-        }
-
-        var cellValue = cell.getStringCellValue();
-
-        if (isValidDate(cellValue)) {
-            return Optional.of(RawTransactionValueType.TIMESTAMP);
-        }
-
-        return Optional.empty();
-    }
-
-    private boolean isValidDate(String stringDate) {
-        try {
-            DEFAULT_DATE_FORMAT.parse(stringDate);
-        } catch (DateTimeParseException e) {
-            return false;
-        }
-        return true;
+        this.replaceTransactionsKafkaTemplate = replaceTransactionsKafkaTemplate;
     }
 
     public Collection<UploadedStatementDTO> fetchStatementsForUser(final int userId) {
@@ -303,8 +155,11 @@ public class StatementsService {
                 })
                 .toList();
 
-        // TODO: Over kafka, delete previous transactions, and create the new ones
-        processedTransactionRepository.saveAllAndFlush(processedTransactions);
+        replaceTransactionsKafkaTemplate.send(KafkaConfiguration.REPLACE_TRANSACTIONS_TOPIC, new KafkaReplaceProcessedTransactionsDTO(
+                statementId,
+                userId,
+                processedTransactions
+        ));
     }
 
     // This const is a result of the limitations of the JVM.
@@ -312,7 +167,7 @@ public class StatementsService {
     // Because of this, it is very difficult to tie the ProcessedTransactionField values to the actual class fields they represent.
     // To resolve this imperfection, this const lives here, in plain view, so when one of the fields is changed,
     // Hopefully the programmer remembers to change the value inside as well.
-    private static final Map<ProcessedTransactionField, BiConsumer<CreateProcessedTransactionDTO, Object>> FIELD_SETTERS = Map.ofEntries(
+    private static final Map<ProcessedTransactionField, BiConsumer<KafkaProcessedTransactionDTO, Object>> FIELD_SETTERS = Map.ofEntries(
             Map.entry(
                     DESCRIPTION,
                     (pt, value) -> pt.setDescription((String) value)
@@ -331,8 +186,8 @@ public class StatementsService {
             )
     );
 
-    private CreateProcessedTransactionDTO mapValuesToTransaction(List<RawTransactionValue> values, final Collection<TransactionMapping> mappings) {
-        final var processedTransaction = new CreateProcessedTransactionDTO();
+    private KafkaProcessedTransactionDTO mapValuesToTransaction(List<RawTransactionValue> values, final Collection<TransactionMapping> mappings) {
+        final var processedTransaction = new KafkaProcessedTransactionDTO();
 
         values.forEach(value -> {
             final var mapping = mappings.stream()

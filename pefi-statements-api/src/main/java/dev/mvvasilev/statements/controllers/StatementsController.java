@@ -7,6 +7,7 @@ import dev.mvvasilev.statements.dto.CreateTransactionMappingDTO;
 import dev.mvvasilev.statements.dto.TransactionMappingDTO;
 import dev.mvvasilev.statements.dto.TransactionValueGroupDTO;
 import dev.mvvasilev.statements.dto.UploadedStatementDTO;
+import dev.mvvasilev.statements.service.StatementParserService;
 import dev.mvvasilev.statements.service.StatementsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -25,9 +26,12 @@ public class StatementsController extends AbstractRestController {
 
     final private StatementsService statementsService;
 
+    final private StatementParserService statementParserService;
+
     @Autowired
-    public StatementsController(StatementsService statementsService) {
+    public StatementsController(StatementsService statementsService, StatementParserService statementParserService1) {
         this.statementsService = statementsService;
+        this.statementParserService = statementParserService1;
     }
 
     @GetMapping
@@ -78,7 +82,7 @@ public class StatementsController extends AbstractRestController {
 
     @PostMapping(value = "/uploadSheet", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<APIResponseDTO<Object>> uploadStatement(@RequestParam("file") MultipartFile file, Authentication authentication) throws IOException {
-        statementsService.uploadStatementFromExcelSheetForUser(
+        statementParserService.uploadStatementFromExcelSheetForUser(
                 file.getOriginalFilename(),
                 file.getContentType(),
                 file.getInputStream(),

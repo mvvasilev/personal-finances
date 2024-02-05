@@ -22,7 +22,7 @@ public interface ProcessedTransactionRepository extends JpaRepository<ProcessedT
 
     Page<ProcessedTransaction> findAllByUserId(int userId, Pageable pageable);
 
-    @Query(value = "DELETE FROM transactions.processed_transaction WHERE statement_id = :statementId", nativeQuery = true)
+    @Query(value = "DELETE FROM transactions.processed_transaction WHERE statement_id = :statementId AND user_id = :userId", nativeQuery = true)
     @Modifying
-    void deleteProcessedTransactionsForStatement(@Param("statementId") Long statementId);
+    void deleteProcessedTransactionsForStatement(@Param("statementId") Long statementId, @Param("userId") Integer userId);
 }

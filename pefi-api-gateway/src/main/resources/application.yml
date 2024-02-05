@@ -26,19 +26,31 @@ spring:
       set-status:
         original-status-header-name: Original-Status
       routes:
-        - id: api
-          uri: ${API_URI}
+        - id: core-api
+          uri: ${CORE_API_URI}
           order: 1
           predicates:
             - Path=/api/**
           filters:
             - RewritePath=/api/(?<segment>.*), /$\{segment}
             - TokenRelay=
-        - id: spa
-          order: 10
-          uri: ${FRONTEND_URI}
+        - id: statements-api
+          uri: ${STATEMENTS_API_URI}
+          order: 2
           predicates:
-            - Path=/**
+            - Path=/api/statements/**
+          filters:
+            - RewritePath=/api/(?<segment>.*), /$\{segment}
+            - TokenRelay=
+        - id: widgets-api
+          uri: ${WIDGETS_API_URI}
+          order: 3
+          predicates:
+            - Path=/api/widgets/**
+          filters:
+            - RewritePath=/api/(?<segment>.*), /$\{segment}
+            - TokenRelay=
+
 server:
   ssl:
     enabled: ${SSL_ENABLED}

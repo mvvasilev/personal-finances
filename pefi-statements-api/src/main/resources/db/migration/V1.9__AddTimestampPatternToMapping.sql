@@ -1,0 +1,1 @@
+ALTER TABLE transactions.transaction_mapping ADD COLUMN timestamp_pattern VARCHAR(255) NULL;

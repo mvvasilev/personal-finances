@@ -1,8 +1,8 @@
 rootProject.name = 'pefi'
 
+include 'pefi-common'
 include 'pefi-frontend'
 include 'pefi-api-gateway'
-include 'pefi-common'
 include 'pefi-core-api'
 include 'pefi-statements-api'
 include 'pefi-widgets-api'

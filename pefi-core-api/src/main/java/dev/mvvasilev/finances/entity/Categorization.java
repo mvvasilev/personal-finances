@@ -2,6 +2,7 @@ package dev.mvvasilev.finances.entity;
 
 import dev.mvvasilev.common.data.AbstractEntity;
 import dev.mvvasilev.common.data.UserOwned;
+import dev.mvvasilev.common.enums.ProcessedTransactionField;
 import dev.mvvasilev.finances.enums.CategorizationRule;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;

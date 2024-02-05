@@ -1,5 +1,6 @@
 package dev.mvvasilev.finances;
 
+import dev.mvvasilev.common.enums.ProcessedTransactionField;
 import dev.mvvasilev.finances.entity.Categorization;
 import dev.mvvasilev.finances.enums.CategorizationRule;
 import org.apache.commons.lang3.RandomUtils;

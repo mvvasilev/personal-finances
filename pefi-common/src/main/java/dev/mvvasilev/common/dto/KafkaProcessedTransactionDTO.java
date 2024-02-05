@@ -2,7 +2,7 @@ package dev.mvvasilev.common.dto;
 
 import java.time.LocalDateTime;
 
-public class CreateProcessedTransactionDTO {
+public class KafkaProcessedTransactionDTO {
 
     private String description;
 
@@ -16,7 +16,7 @@ public class CreateProcessedTransactionDTO {
 
     private Long statementId;
 
-    public CreateProcessedTransactionDTO() {
+    public KafkaProcessedTransactionDTO() {
     }
 
     public String getDescription() {
