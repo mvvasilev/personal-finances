@@ -7,10 +7,10 @@ services:
       - '8080:8080'
     environment:
       PROFILE: development
-      AUTHENTIK_CLIENT_ID: r72Ja9IIGBSoKpBsYTuJ2yBZMmJnXcWnLdW3Sgpp
-      AUTHENTIK_CLIENT_SECRET: LhhuUZlQPFPzGGEuxDhvlyBtten0LufRHx8I5ZH63031yHk7UdUboCR2WgNA4aSpmmFOz6TfkgpYHy1eh3jWeWUGpisPZxZ2PCJlSkJBtoF54MDh1iBZZSQ1gcD6r69H
-      AUTHENTIK_ISSUER_URL: https://auth.mvvasilev.dev/application/o/personal-finances/
-      AUTHENTIK_BACK_CHANNEL_LOGOUT_URL: https://auth.mvvasilev.dev/application/o/personal-finances/end-session/
+      AUTHENTIK_CLIENT_ID: ${AUTHENTIK_CLIENT_ID}
+      AUTHENTIK_CLIENT_SECRET: ${AUTHENTIK_CLIENT_ID}
+      AUTHENTIK_ISSUER_URL: https://auth.mvvasilev.dev/application/o/${AUTHENTIK_APP_NAME}/
+      AUTHENTIK_BACK_CHANNEL_LOGOUT_URL: https://auth.mvvasilev.dev/application/o/${AUTHENTIK_APP_NAME}/end-session/
       GATEWAY_URI: http://localhost:8080
       CORE_API_URI: http://core-api:8081
       STATEMENTS_API_URI: http://statements-api:8081
@@ -35,10 +35,10 @@ services:
       - '8081:8081'
     environment:
       PROFILE: 'development'
-      AUTHENTIK_ISSUER_URL: 'https://auth.mvvasilev.dev/application/o/personal-finances/'
-      DATASOURCE_URL: 'jdbc:postgresql://database:5432/finances'
-      DATASOURCE_USER: 'postgres'
-      DATASOURCE_PASSWORD: 'postgres'
+      AUTHENTIK_ISSUER_URL: 'https://auth.mvvasilev.dev/application/o/${AUTHENTIK_APP_NAME}/'
+      DATASOURCE_URL: jdbc:postgresql://database:5432/${POSTGRES_DB}
+      DATASOURCE_USER: ${POSTGRES_USER}
+      DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       KAFKA_SERVERS: 'kafka-broker:9092'
 
   statements-api:
@@ -47,10 +47,10 @@ services:
       - '8082:8081'
     environment:
       PROFILE: 'development'
-      AUTHENTIK_ISSUER_URL: 'https://auth.mvvasilev.dev/application/o/personal-finances/'
-      DATASOURCE_URL: 'jdbc:postgresql://database:5432/finances'
-      DATASOURCE_USER: 'postgres'
-      DATASOURCE_PASSWORD: 'postgres'
+      AUTHENTIK_ISSUER_URL: 'https://auth.mvvasilev.dev/application/o/${AUTHENTIK_APP_NAME}/'
+      DATASOURCE_URL: jdbc:postgresql://database:5432/${POSTGRES_DB}
+      DATASOURCE_USER: ${POSTGRES_USER}
+      DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       KAFKA_SERVERS: 'kafka-broker:9092'
 
   widgets-api:
@@ -59,10 +59,10 @@ services:
       - '8083:8081'
     environment:
       PROFILE: 'development'
-      AUTHENTIK_ISSUER_URL: 'https://auth.mvvasilev.dev/application/o/personal-finances/'
-      DATASOURCE_URL: 'jdbc:postgresql://database:5432/finances'
-      DATASOURCE_USER: 'postgres'
-      DATASOURCE_PASSWORD: 'postgres'
+      AUTHENTIK_ISSUER_URL: 'https://auth.mvvasilev.dev/application/o/${AUTHENTIK_APP_NAME}/'
+      DATASOURCE_URL: jdbc:postgresql://database:5432/${POSTGRES_DB}
+      DATASOURCE_USER: ${POSTGRES_USER}
+      DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
 
   redis:
     image: redis/redis-stack:latest
@@ -75,9 +75,9 @@ services:
     ports:
       - '5432:5432'
     environment:
-      POSTGRES_DB: 'finances'
-      POSTGRES_USER: 'postgres'
-      POSTGRES_PASSWORD: 'postgres'
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
   kafka-broker:
     image: confluentinc/cp-kafka:7.5.3
