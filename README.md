@@ -82,4 +82,4 @@ uses the awesome [Authentik](https://github.com/goauthentik/authentik) project.
 see [docker-compose.yml](docker-compose.yml)
 
 ### Container Diagram
-![pefi-architecture.png](.readme/pefi-architecture.png)
+![pefi-architecture.png](.readme/pefi-container-diagram.png)
