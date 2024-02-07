@@ -24,10 +24,10 @@ export default function CategorizationRulesEditor({selectedCategory, onRuleBehav
 
         toast.promise(
             Promise.all([
-                utils.performRequest("/api/categories/rules")
+                utils.performRequest("/api/enums/category-rules")
                     .then(resp => resp.json())
                     .then(({result}) => setRuleTypes(result)),
-                utils.performRequest("/api/processed-transactions/fields")
+                utils.performRequest("/api/enums/processed-transaction-fields")
                     .then(resp => resp.json())
                     .then(({result}) => setFields(result))
             ]),

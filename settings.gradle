@@ -6,4 +6,5 @@ include 'pefi-api-gateway'
 include 'pefi-core-api'
 include 'pefi-statements-api'
 include 'pefi-widgets-api'
+include 'pefi-login-service'
 

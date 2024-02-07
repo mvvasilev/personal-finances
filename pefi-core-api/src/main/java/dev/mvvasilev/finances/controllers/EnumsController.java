@@ -6,6 +6,7 @@ import dev.mvvasilev.common.web.APIResponseDTO;
 import dev.mvvasilev.finances.dtos.CategorizationRuleDTO;
 import dev.mvvasilev.finances.dtos.ProcessedTransactionFieldDTO;
 import dev.mvvasilev.finances.enums.CategorizationRule;
+import dev.mvvasilev.finances.enums.TimePeriod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,6 +18,11 @@ import java.util.Collection;
 @RestController
 @RequestMapping("/enums")
 public class EnumsController extends AbstractRestController {
+
+    @GetMapping("/statistics-time-periods")
+    public ResponseEntity<APIResponseDTO<TimePeriod[]>> fetchTimePeriods() {
+        return ok(TimePeriod.values());
+    }
 
     @GetMapping("/category-rules")
     public ResponseEntity<APIResponseDTO<Collection<CategorizationRuleDTO>>> fetchCategorizationRules() {

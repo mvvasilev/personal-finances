@@ -8,25 +8,48 @@ let LEV_FORMAT = new Intl.NumberFormat('bg-BG', {
 let utils = {
     performRequest: async (url, options) => {
         let opts = options ?? { headers: {} };
-        return await fetch(url, {
+
+        let result = await fetch(url, {
             ...opts,
             headers: {
                 ...opts.headers,
                 'X-Requested-With': 'XMLHttpRequest'
             }
-        }).then(resp => {
-            if (resp.status === 401) {
-                window.location.replace(`${window.location.origin}/oauth2/authorization/authentik`)
-
-                throw "Unauthorized, please login.";
-            }
-
-            if (!resp.ok) {
-                throw resp.status;
-            }
-
-            return resp;
         });
+
+        if (result.ok) {
+            return result;
+        }
+
+        // If we are unauthorized, refresh the token, and try once more.
+        if (result.status === 401) {
+            let tokenResponse = await fetch("/refresh-token", {
+                method: "POST",
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+
+            // If the token refresh failed, redirect to login
+            if (!tokenResponse.ok) {
+                window.location.replace(`${window.location.origin}/oauth2/authorization/authentik`);
+            }
+
+            // Try again
+            let secondAttempt = await fetch(url, {
+                ...opts,
+                headers: {
+                    ...opts.headers,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            // If our second attempt failed as well after refresh, redirect to login
+            if (!secondAttempt.ok && result.status === 401) {
+                window.location.replace(`${window.location.origin}/oauth2/authorization/authentik`);
+            }
+        }
+
+        // If the error wasn't unauthorized, just return the response
+        return result;
     },
     isSpinnerShown: () => {
         return localStorage.getItem("SpinnerShowing") === "true";

@@ -19,7 +19,7 @@ public class TransactionsKafkaListener {
 
     @KafkaListener(
             topics = KafkaConfiguration.REPLACE_TRANSACTIONS_TOPIC,
-            containerFactory = "replaceTransactionsKafkaListenerContainerFactory"
+            groupId = "core-api"
     )
     public void replaceTransactionsListener(KafkaReplaceProcessedTransactionsDTO message) {
         service.createOrReplaceProcessedTransactions(message.statementId(), message.userId(), message.transactions());

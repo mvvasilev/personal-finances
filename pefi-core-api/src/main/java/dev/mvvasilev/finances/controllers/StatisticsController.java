@@ -30,11 +30,6 @@ public class StatisticsController extends AbstractRestController {
         this.statisticsService = statisticsService;
     }
 
-    @GetMapping("/timePeriods")
-    public ResponseEntity<APIResponseDTO<TimePeriod[]>> fetchTimePeriods() {
-        return ok(TimePeriod.values());
-    }
-
     @GetMapping("/totalSpendingByCategory")
     @PreAuthorize("@authService.isOwner(#categoryId, T(dev.mvvasilev.finances.entity.TransactionCategory))")
     public ResponseEntity<APIResponseDTO<SpendingByCategoriesDTO>> fetchSpendingByCategory(

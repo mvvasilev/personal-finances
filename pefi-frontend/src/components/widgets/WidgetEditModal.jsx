@@ -49,7 +49,7 @@ export default function WidgetEditModal(
     }, [initialWidget]);
 
     useEffect(() => {
-        utils.performRequest("/api/widgets/types")
+        utils.performRequest("/api/enums/widget-types")
             .then(resp => resp.json())
             .then(resp => setWidgetTypes(resp.result));
 
@@ -57,7 +57,7 @@ export default function WidgetEditModal(
             .then(resp => resp.json())
             .then(resp => setCategories(resp.result));
 
-        utils.performRequest("/api/statistics/timePeriods")
+        utils.performRequest("/api/enums/statistics-time-periods")
             .then(resp => resp.json())
             .then(resp => setTimePeriods(resp.result));
     }, []);
